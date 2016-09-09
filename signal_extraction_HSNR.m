@@ -78,7 +78,7 @@ frame_pix = act_gauss_size;
 % loop (attention, the scanning direction of our microscope is hardcoded,
 % first down, then right)
 h = waitbar(0,'Extracting signal...');
-for ky = 0 : nsteps - 1
+for ky = 0 : nsteps - 2
     shift_y = -(ky * shiftp) / objp;
     
     for kx = 0 : nsteps - 1

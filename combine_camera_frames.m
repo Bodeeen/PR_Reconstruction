@@ -1,4 +1,4 @@
-function [signalgot, signalsthlm] = combine_camera_frames(input_camera_frames, input_camera_darkframe, output_filename)
+function [central_signal B] = combine_camera_frames(B, input_camera_frames, input_camera_darkframe, output_filename)
 % Combines the camera frames of the parallelized RESOLFT microscope used in
 % the publication: 'Nanoscopy with more than a hundred thousand
 % "doughnuts"' by Andriy Chmyrov et al., to appear in Nature Methods, 2013
@@ -12,26 +12,27 @@ function [signalgot, signalsthlm] = combine_camera_frames(input_camera_frames, i
 camera_pixel_length = 0.066;   % camera pixel length [µm] in sample space
 scanning_period = 0.320;        % scanning period [µm] in sample space
 activation_size = 0.020;
+diff_limit = 0.250; %um
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
 number_scanning_steps = round(scanning_period/(activation_size/2.5));     % number of scanning steps in one direction
     % total number of camera frames is (number_scanning_steps)^2
-pixel_length = 0.010;            % pixel length [µm] of interpolated and combined frames
+recon_pixel_length = 0.010;            % pixel length [µm] of interpolated and combined frames
 pinhole_nm = 0.300;
 
 % derived parameters
 shift_per_step = scanning_period / number_scanning_steps / camera_pixel_length;
     % shift per scanning step [camera pixels]
-pixel_length_per_camera = pixel_length / camera_pixel_length;
+recon_px_per_camera_px = recon_pixel_length / camera_pixel_length;
     % length of pixel of combined frames in camera pixels
-
+diff_lim_px = diff_limit / camera_pixel_length;
 %% load camera frames and subtract background frame and correct for photobleaching
 data = import_data(input_camera_frames, input_camera_darkframe, false);
 
 %% determine off switching pattern frequencies and offsets
 disp('Identifying pattern...')
-pattern = switching_pattern_identification(data, scanning_period / camera_pixel_length)
-% pattern = [4.8345 0.7473 4.8384 0.7484]
+% pattern = switching_pattern_identification(data, scanning_period / camera_pixel_length)
+pattern = [4.8345 0.7473 4.8384 0.7484]
 % pattern = [9.6571 0.8072 9.6568 0.8077]
 disp(pattern)
 
@@ -39,10 +40,15 @@ signalgot = 0;
 signalsthlm = 0;
 
 %% combination of camera images
-
+% Check if bases and G matrix already exists
+try
+    size(B);
+catch
+    B = [];
+end
 disp('Extracting signal...')
 %%
-% [central, peripheral] = signal_extraction_fast(data, pattern, pixel_length_per_camera, shift_per_step, pinhole_nm / camera_pixel_length);
+% [central, peripheral] = signal_extraction_fast(data, pattern, B, G, recon_px_per_camera_px, shift_per_step, pinhole_nm / camera_pixel_length);
 % signalgot = max(central - 0.8 * peripheral, 0);
 % immax = max(signalgot(:));
 % immin = min(signalgot(:));
@@ -54,16 +60,16 @@ disp('Extracting signal...')
 % imshow(signalgot,[])
 % title(sprintf('SNR = %.1f', snr))
 %%
-central = signal_extraction_HSNR(data, pattern, pixel_length_per_camera, shift_per_step, pinhole_nm / camera_pixel_length, activation_size/camera_pixel_length);
-signalsthlm = central;
-immax = max(signalsthlm(:));
-immin = min(signalsthlm(:));
-imstd = std(signalsthlm(:));
-snr = 10*log10((immax-immin)/imstd);
-% Plot
-subplot(1,2,2)
-imshow(signalsthlm,[])
-title(sprintf('SNR = %.1f', snr))
+[central_signal B] = signal_extraction_LS(data, pattern, B, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_nm / camera_pixel_length, activation_size/camera_pixel_length);
+% signalsthlm = central;
+% immax = max(signalsthlm(:));
+% immin = min(signalsthlm(:));
+% imstd = std(signalsthlm(:));
+% snr = 10*log10((immax-immin)/imstd);
+% % Plot
+% subplot(1,2,2)
+% imshow(signalsthlm,[])
+% title(sprintf('SNR = %.1f', snr))
 
 
 
