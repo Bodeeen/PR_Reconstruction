@@ -20,7 +20,7 @@ function [pattern] = switching_pattern_identification(data, expected_value)
 
 %% error check
 assert(nargin == 2, 'Not enough arguments!');
-range = [expected_value - 1, expected_value + 1];
+range = [expected_value - 0.5, expected_value + 0.5];
 
 %% get dimensions
 dims = size(data);

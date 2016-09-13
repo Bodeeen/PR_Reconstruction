@@ -55,7 +55,7 @@ for kx = 0 : nsteps - 1
         shift_y = ky * shiftp;
         
         % get frame number and frame
-        kf = ky + 1 + nsteps * kx;
+        kf = kx + 1 + nsteps * ky;
         frame = data(:, :, kf);
         
         

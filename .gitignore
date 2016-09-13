@@ -1,7 +1,9 @@
 *.tif
+*.tiff
 *.jpg
 *.png
 *.mat
 *.avi
 *.asv
 *.fig
+*.hdf5

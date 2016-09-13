@@ -64,29 +64,35 @@ activation_gaussian = Gausskern(act_gauss_size, activation_size_px/objp);
 numspotsx = floor((size(xi,2) - (x0_up+fx_up/2)) / (fx_up));
 numspotsy = floor((size(xi,1) - (y0_up+fy_up/2)) / (fy_up));
 
+%Frame pixels
+frame_pix = 5*act_gauss_size;
+
 %% Allocate matrices for central signal and central weights
-central_signal = zeros(size(xi, 1), size(xi, 2));
-central_weights = zeros(size(xi, 1), size(xi, 2));
+central_signal = zeros(size(xi, 1) + 2*frame_pix, size(xi, 2)+ 2*frame_pix);
+central_weights = zeros(size(xi, 1) + 2*frame_pix, size(xi, 2)+ 2*frame_pix);
 
 % Initiate values to store the corners of the reconstructed image
 min_sx = 100;
 min_sy = 100;
 max_ex = 0;
 max_ey = 0;
-%Frame pixels
-frame_pix = act_gauss_size;
+
 % loop (attention, the scanning direction of our microscope is hardcoded,
 % first down, then right)
 h = waitbar(0,'Extracting signal...');
-for ky = 0 : nsteps - 2
-    shift_y = -(ky * shiftp) / objp;
-    
-    for kx = 0 : nsteps - 1
-        waitbar((ky*nsteps + kx)/(nsteps^2))
-        shift_x = -(kx * shiftp) / objp;
+for kx = 0 : nsteps - 1
+    shift_x = -(kx * shiftp) / objp;
+    dir = (-1)^kx;
+    off = mod(kx,2);
+    for ky = 0 : nsteps - 1
+        waitbar((kx*nsteps + ky)/(nsteps^2))
+        %% Unidirectional scan
+%         shift_x = -(kx * shiftp) / objp;
+        %% Bidirectional scan
+        shift_y = off*(nsteps - 1)*shiftp/objp + dir * ky * shiftp/objp;
         
         % get frame number and frame
-        kf = kx + 1 + nsteps * ky;
+        kf = ky + 1 + nsteps * kx;
         frame = data(:, :, kf);
         % Upsampling
         est = interpn(frame, yi, xi, 'nearest');
@@ -107,7 +113,7 @@ for ky = 0 : nsteps - 2
         % Loop over each pixel in frame and assign value to correct
         % coefficient
         for py = py_s:py_e
-            for px = px_s:py_e
+            for px = px_s:px_e
                 % Determine with coefficient the pixel belongs to (x and y)
                 cy = 1+floor((py-(y0_up+fy_up/2))/fy_up);
                 cx = 1+floor((px-(x0_up+fx_up/2))/fx_up);
@@ -123,17 +129,11 @@ for ky = 0 : nsteps - 2
             for cx = 1:numspotsx
                 % Determine correct area for activation gaussian to be
                 % placed in 
-                sy = frame_pix + ceil(shift_y + cy*fy_up);
+                sy = frame_pix + ceil(shift_y + (cy-1)*fy_up);
                 ey = round(sy + act_gauss_size - 1);
-                sx = frame_pix + ceil(shift_x + cx*fx_up);
+                sx = frame_pix + ceil(shift_x + (cx-1)*fx_up);
                 ex = round(sx + act_gauss_size - 1);
-                
-                % Update corners
-                min_sx = min(min_sx, sx);
-                min_sy = min(min_sy, sy);
-                max_ex = max(max_ex, ex);
-                max_ey = max(max_ey, ey);
-                
+
                 % Add signal and wights
                 signal = coeffs(cy,cx);
                 central_signal(sy:ey, sx:ex) = central_signal(sy:ey, sx:ex) + signal*activation_gaussian;
@@ -141,11 +141,16 @@ for ky = 0 : nsteps - 2
             end
         end
 %         peripheral_est = periph_wmax .* est;
-       
 %         imshow(central_signal,[])
 %         drawnow
     end
 end
+%% Find corners
+min_sx = round(frame_pix - nsteps*shiftp/objp);
+min_sy = frame_pix;
+max_ex = round(frame_pix + ceil((numspotsx-1)*fx_up));
+max_ey = round(frame_pix + ceil(nsteps*shiftp/objp + (numspotsy-1)*fx_up));
+
 close (h)
 % normalize by weights
 central_signal = central_signal ./ central_weights;
