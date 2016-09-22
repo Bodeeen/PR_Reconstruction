@@ -1,4 +1,4 @@
-function [pattern] = switching_pattern_identification(data, expected_value)
+function [pattern] = switching_pattern_identification(data, expected_value, force_use_expected)
 % Extracts the frequencies and offsets of the off switching pattern from
 % the camera frame data as used in the publication: 'Nanoscopy with more
 % than a hundred thousand "doughnuts"' by Andriy Chmyrov et al.,
@@ -19,8 +19,8 @@ function [pattern] = switching_pattern_identification(data, expected_value)
 % we see, which is the pattern of on-switched molecules
 
 %% error check
-assert(nargin == 2, 'Not enough arguments!');
-range = [expected_value - 0.5, expected_value + 0.5];
+assert(nargin == 3, 'Not enough arguments!');
+range = [expected_value - 0.3, expected_value + 0.3];
 
 %% get dimensions
 dims = size(data);
@@ -34,41 +34,46 @@ for kf = 1 : nframes
     w = fft2(frame);
     power_spectra = power_spectra + abs(w).^2;
 end
+if ~force_use_expected
+    % range -> frequency range
+    frange(1,:) = [dims(1), dims(1)] ./ range;
+    frange(2,:) = [dims(2), dims(2)] ./ range;
 
-% range -> frequency range
-frange(1,:) = [dims(1), dims(1)] ./ range;
-frange(2,:) = [dims(2), dims(2)] ./ range;
+    %% we still have four identical quadrants, add them up
+    center = floor((dims - 1) / 2);
+    q1 = power_spectra(1 : center(1) + 1, 1 : center(2) + 1);
+    q2 = flipdim(power_spectra(1 : center(1) + 1, dims(2) - center(2) : dims(2)), 2);
+    q2 = circshift(q2, [0, 1]);
+    q3 = flipdim(power_spectra(dims(1) - center(1) : dims(1), 1 : center(2) + 1), 1);
+    q3 = circshift(q3, [1, 0]);
+    q4 = flipdim(flipdim(power_spectra(dims(1) - center(1) : dims(1), dims(2) - center(2) : dims(2)), 1), 2);
+    q4 = circshift(q4, [1, 1]);
 
-%% we still have four identical quadrants, add them up
-center = floor((dims - 1) / 2);
-q1 = power_spectra(1 : center(1) + 1, 1 : center(2) + 1);
-q2 = flipdim(power_spectra(1 : center(1) + 1, dims(2) - center(2) : dims(2)), 2);
-q2 = circshift(q2, [0, 1]);
-q3 = flipdim(power_spectra(dims(1) - center(1) : dims(1), 1 : center(2) + 1), 1);
-q3 = circshift(q3, [1, 0]);
-q4 = flipdim(flipdim(power_spectra(dims(1) - center(1) : dims(1), dims(2) - center(2) : dims(2)), 1), 2);
-q4 = circshift(q4, [1, 1]);
+    % sum up
+    quadrants = double(q1 + q2 + q3 + q4);
 
-% sum up
-quadrants = double(q1 + q2 + q3 + q4);
+    %% find first and highest peak along x-direction (period is efx)
+    [~, locs] = findpeaks(quadrants(:, 1), 'minpeakdistance', 2, 'sortstr', 'descend');
+    % only those who are in the range
+    locs(locs > frange(1,1)) = [];
+    locs(locs < frange(1,2)) = [];
+    locx = locs(1); % the first one in case there are more
+    p = findpeakwidth(quadrants(:, 1), 'gaussian', locx, 1.5);
+    efx = dims(1) / (p(3) - 1);
 
-%% find first and highest peak along x-direction (period is efx)
-[~, locs] = findpeaks(quadrants(:, 1), 'minpeakdistance', 2, 'sortstr', 'descend');
-% only those who are in the range
-locs(locs > frange(1,1)) = [];
-locs(locs < frange(1,2)) = [];
-locx = locs(1); % the first one in case there are more
-p = findpeakwidth(quadrants(:, 1), 'gaussian', locx, 1.5);
-efx = dims(1) / (p(3) - 1);
-
-%% then find peak in y-direction (period is efy)
-[~, locs] = findpeaks(quadrants(1, :), 'minpeakdistance', 2, 'sortstr', 'descend');
-locs(locs > frange(2,1)) = [];
-locs(locs < frange(2,2)) = [];
-locy = locs(1);
-p = findpeakwidth(quadrants(1, :), 'gaussian', locy, 1.5);
-efy = dims(2) / (p(3) - 1);
-
+    %% then find peak in y-direction (period is efy)
+    [~, locs] = findpeaks(quadrants(1, :), 'minpeakdistance', 2, 'sortstr', 'descend');
+    locs(locs > frange(2,1)) = [];
+    locs(locs < frange(2,2)) = [];
+    locy = locs(1);
+    p = findpeakwidth(quadrants(1, :), 'gaussian', locy, 1.5);
+    efy = dims(2) / (p(3) - 1);
+else
+    efx = expected_value;
+    efy = expected_value;
+    locx = round(dims(1)/expected_value);
+    locy = round(dims(2)/expected_value);
+end
 %% now estimate the offset by comparing with a pattern of same frequency but zero offset
 % this is less artifact prone than directly reading the phase from the
 % fourier spectra

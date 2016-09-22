@@ -25,8 +25,8 @@ fy = pattern(3);
 y0 = pattern(4);
 
 %% object positions in image so that they are always in the scanned regions
-%NOTE: These depent on scanning directions
-[xi, yi] = object_positions([1, dx - fx], [1, dy - fy], objp);
+%NOTE: These depend on scanning directions
+[xi, yi] = object_positions([fx, dx], [1, dy - fy], objp);
 
 %% central loop: interpolate camera frame on shifting grids (scanning)
 % and extract central and peripheral signals
@@ -38,15 +38,19 @@ peripheral_signal_weights = 0;
 % loop (attention, the scanning direction of our microscope is hardcoded,
 % first down, then right)
 h = waitbar(0,'Extracting signal...');
-for kx = 0 : nsteps - 1
-    shift_x = kx * shiftp;
-    
-    for ky = 0 : nsteps - 1
-        waitbar((kx*nsteps + ky)/(nsteps^2))
-        shift_y = ky * shiftp;
+for ky = 0 : nsteps - 1
+    shift_y = ky * shiftp;
+    dir = (-1)^ky;
+    off = mod(ky,2);
+    for kx = 0 : nsteps - 1
+        waitbar((ky*nsteps + kx)/(nsteps^2))
+        %% Unidirectional scan
+%         shift_x = -(kx * shiftp) / objp;
+        %% Bidirectional scan
+        shift_x = - (off*(nsteps - 1)*shiftp + dir * kx * shiftp);
         
         % get frame number and frame
-        kf = ky + 1 + nsteps * kx;
+        kf = kx + 1 + nsteps * ky;
         frame = data(:, :, kf);
         
         % adjust positions for this frame
@@ -66,12 +70,26 @@ for kx = 0 : nsteps - 1
         % compute weights (we add up currently 50nm around each position),
         % feel free to change this value for tradeoff of SNR and resolution
 %         W = 0.05 / 0.0975;
-        wmax = power(2., -t2max / (W / 2)^2);
+%         wmax = power(2., -t2max / (W / 2)^2);
+
+        c = 2*(W/2.35)^2;
+        wmax = exp(-(t2max.^2/c));
         
         % add up with weights
         central_signal = central_signal + wmax .* est;
         central_signal_weights = central_signal_weights + wmax;
-        
+%         if kf == 1 || kf == 20 || kf == 21
+%             figure
+%             imshow(wmax,[])
+%             title(sprintf('%d gottingen cummulative', kf))
+%             figure
+%             imshow(central_signal_weights,[])
+%             title(sprintf('%d gottingen single', kf))
+%             disp(shift_x)
+%         end
+%         imshow(central_signal, [])
+%         title('Gottingen')
+%         drawnow
         % subtraction of surrounding minima
         cx = round(fx / 2 / objp); % cx/cy here is the distance (in upsampled pixels) between
         cy = round(fy / 2 / objp); % a minima and a maxima in the different dimensions.
@@ -98,6 +116,13 @@ for kx = 0 : nsteps - 1
     end
 end
 close (h)
+% figure
+% imshow(central_signal,[])
+% title('GOT sig')
+% figure
+% imshow(central_signal_weights,[])
+% title('GOT w')
+
 % normalize by weights
 central_signal = central_signal ./ central_signal_weights;
 peripheral_signal = peripheral_signal ./ peripheral_signal_weights;

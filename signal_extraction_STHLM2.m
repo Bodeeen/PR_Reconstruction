@@ -1,4 +1,4 @@
- function [central_signal, peripheral_signal] = signal_extraction(data, pattern, objp, shiftp, W)
+ function [central_signal, peripheral_signal] = signal_extraction(data, pattern, objp, shiftp, W, A)
 % Given the pattern period and offset as well as the output pixel length
 % and the scanning pixel length it constructs the central and peripheral
 % signal frames as used in the publication: 'Nanoscopy with more than a
@@ -8,7 +8,7 @@
 % pattern is the periods and offsets of the on-switched regions
 
 %% error checks
-assert(nargin == 5)
+assert(nargin == 6)
 
 %%Scan directions
 
@@ -28,6 +28,15 @@ y0 = pattern(4);
 %NOTE: These depend on scanning directions
 [xi, yi] = object_positions([1, dx - fx], [fy, dy], objp);
 [xj, yj] = ndgrid(1:size(xi, 1),1:size(xi,2));
+
+%% Copute pattern values in units of upsampled pixels
+dx_up = size(xi, 2);
+dy_up = size(xi, 1);
+x0_up = x0/objp;
+y0_up = y0/objp;
+fx_up = fx/objp;
+fy_up = fy/objp;
+
 % compute distance to center (minima of off switching pattern)
 [t2max, ~] = object_distances(xi, yi, fx, x0, fy, y0);
 
@@ -37,6 +46,9 @@ y0 = pattern(4);
 c = 2*(W/2.35)^2;
 weights = exp(-(t2max.^2/c));
 
+% Compute pixel correlation between raw and shrunken activation spots
+act_scale = W/A;
+[act_corr_x act_corr_y act_corr_weights] = make_act_corr_grid(dx_up, dy_up, fx_up, x0_up, fy_up, y0_up, act_scale);
 %% central loop: interpolate camera frame on shifting grids (scanning)
 % and extract central and peripheral signals
 central_signal = 0;
@@ -78,6 +90,15 @@ for ky = 0 : nsteps - 1
         % add up with weights
         central_signal = central_signal + wmax .* est;
         central_signal_weights = central_signal_weights + wmax;
+        
+        central_signal_shrunk = zeros(dy_up, dx_up);
+        for y = 1:dy_up
+            for x = 1:dx_up
+                act_x = act_corr_x(x);
+                act_y = act_corr_y(y);
+                central_signal_shrunk(act_y, act_x) = central_signal_shrunk(act_y, act_x) + central_signal(y,x);
+            end
+        end
 %         imshow(central_signal,[])
 %         drawnow
         % subtraction of surrounding minima
@@ -149,4 +170,31 @@ h = ty > fy / 2;
 ty(h) = ty(h) - fy;
 
 t2min = sqrt(tx.^2 + ty.^2);
+end
+
+%%NOTE x and y interchanged from Göttingen code
+
+function [AC_x AC_y weights] = make_act_corr_grid(size_x, size_y, fy, y0, fx, x0, act_scale)
+x = 1:size_x;
+y = 1:size_y;
+
+txmax = mod(x - x0, fx);
+h = txmax > fx / 2;
+txmax(h) = txmax(h) - fx;
+AC_x = round(x - txmax*(1-1/act_scale));
+
+tymax = mod(y - y0, fy);
+h = tymax > fy / 2;
+tymax(h) = tymax(h) - fy;
+AC_y = round(y - tymax*(1-1/act_scale));
+
+weights = zeros(size_y, size_x);
+for x = 1:size_x
+    for y = 1:size_y
+        act_x = AC_x(x);
+        act_y = AC_y(y);
+        weights(act_y,act_x) = weights(act_y,act_x) + 1;
+    end
+end
+
 end

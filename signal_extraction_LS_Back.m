@@ -1,4 +1,4 @@
-function [central_signal B] = signal_extraction(data, pattern, B, diff_lim_px, objp, shiftp, W, activation_size_px)
+function [central_signal peripheral_signal B] = signal_extraction(data, pattern, B, diff_lim_px, objp, shiftp, W, activation_size_px)
 % Given the pattern period and offset as well as the output pixel length
 % and the scanning pixel length it constructs the central and peripheral
 % signal frames as used in the publication: 'Nanoscopy with more than a
@@ -54,26 +54,38 @@ G = sBt*sB;
 Ginv = inv(G);
 h = waitbar(0,'Extracting coordinates...');
 c = zeros(size(G,1), nframes);
-
+disp('starting parfot')
 for i = 1:nframes
     waitbar(i/nframes);
     frame = imresize(data(:,:,i), 1/objp, 'nearest');
     frame_vec = reshape(frame, [numel(frame) 1]);
     
     cd = sBt*frame_vec;
-%     c(:, i) = lsqnonneg(G ,cd);
-    c(:, i) = Ginv*cd; % Linear least squares solution.
+    c(:, i) = fnnls(G ,cd);
+%     c(:, i) = Ginv*cd; % Linear least squares solution.
                         % NOTE: Order of computation essential for computation
                         % time
 
 
 end
-close(h)
+c_cent = c(1:numspotsX*numspotsY,:);
+c_periph = c(numspotsX*numspotsY + 1:end,:);
+
+c_p_av = zeros(numspotsY*numspotsX, nframes);
+kern = ones(2)/4;
+for i = 1:nframes
+    temp = reshape(c_periph(:,i), [numspotsY+1 numspotsX+1]);
+    av = conv2(temp, kern, 'valid');
+    c_p_av(:,i) = reshape(av, [numspotsX*numspotsY 1]);
+end
+
+
+disp('finished parfor')
+% close(h)
 
 %% Activation gaussian is the 2D gaussian that corresponds in size to the
 %  activation spot. Used to recontrucs the image.
-act_gauss_size = 1+2*round(activation_size_px/objp)
-;
+act_gauss_size = 1+2*round(activation_size_px/objp);
 activation_gaussian = Gausskern(act_gauss_size, activation_size_px/objp);
 
 
@@ -82,7 +94,8 @@ frame_pix = 100;%act_gauss_size;
 
 %% Allocate matrices for central signal and central weights
 central_signal = zeros(ceil(dy_up + 2*frame_pix + fy_up), ceil(dx_up + 2*frame_pix + fx_up));
-central_weights = zeros(ceil(dy_up + 2*frame_pix + fy_up), ceil(dx_up + 2*frame_pix + fx_up));
+peripheral_signal = zeros(ceil(dy_up + 2*frame_pix + fy_up), ceil(dx_up + 2*frame_pix + fx_up));
+weights = zeros(ceil(dy_up + 2*frame_pix + fy_up), ceil(dx_up + 2*frame_pix + fx_up));
 
 % Initiate values to store the corners of the reconstructed image
 min_sx = 100;
@@ -93,15 +106,16 @@ max_ey = 0;
 
 % Loop over all coefficients and multiply each coefficient with a 
 % correctly shifted activation gaussian
-
+h = waitbar(0,'Reconstructing image...');
 for i = 1:nframes
     l = floor((i-1)/nsteps);
     shift_x = -l* shiftp/objp;
     dir = (-1)^l;
     off = mod(l,2);
     shift_y = off*(nsteps - 1)*shiftp/objp + dir * mod(i-1,nsteps) * shiftp/objp;
-    for cx = 1:numspotsX % -2 to avoid spots lying on the edge
+    for cx = 1:numspotsX
         for cy = 1:numspotsY
+            waitbar(((i-1)*numspotsY*numspotsX + cx*numspotsY + cy)/(numspotsY*numspotsY*nframes))
             % Determine correct area for activation gaussian to be
             % placed in 
             sy = frame_pix + ceil(shift_y + (cy-1)*fy_up);
@@ -116,56 +130,77 @@ for i = 1:nframes
             max_ey = max(max_ey, ey);
 
             % Add signal and wights
-            signal = c((cx-1)*numspotsY+cy, i);
-            central_signal(sy:ey, sx:ex) = central_signal(sy:ey, sx:ex) + signal*activation_gaussian;
-            central_weights(sy:ey, sx:ex) = central_weights(sy:ey, sx:ex) + activation_gaussian;
+            signal_c = c_cent((cx-1)*numspotsY+cy, i);
+            signal_p = c_periph((cx-1)*numspotsY+cy, i);
+            central_signal(sy:ey, sx:ex) = central_signal(sy:ey, sx:ex) + signal_c*activation_gaussian;
+            peripheral_signal(sy:ey, sx:ex) = peripheral_signal(sy:ey, sx:ex) + signal_p*activation_gaussian;
+            weights(sy:ey, sx:ex) = weights(sy:ey, sx:ex) + activation_gaussian;
         end
     end
 %     imshow(central_signal,[]);
 %     drawnow
 end
+close(h)
 % normalize by weights
-central_signal = central_signal ./ central_weights;
+central_signal = central_signal ./ weights;
 central_signal = central_signal(min_sy+5:max_ey-5, min_sx+5:max_ex-5);
 central_signal(isnan(central_signal)) = 0;
+peripheral_signal = peripheral_signal ./ weights;
+peripheral_signal = peripheral_signal(min_sy+5:max_ey-5, min_sx+5:max_ex-5);
+peripheral_signal(isnan(peripheral_signal)) = 0;
 B = {B, numspotsX, numspotsY};
 end 
 
-function [numspotsX numspotsY bases] = make_gauss_bases(size_x, size_y, fwhm, x0, y0, fx, fy)
+function [numspotsX numspotsY cent_and_periph_bases] = make_gauss_bases(size_x, size_y, fwhm, x0, y0, fx, fy)
 
 %%Calculate size of and create gaussian kernal
 gauss_kern_size = 4*round(fwhm) + 1; % Use even factor in front
 gauss_kern = Gausskern(gauss_kern_size, fwhm);
 
 %Size of edge to use when creating base images
-edg = ceil(gauss_kern_size / 2);
+edg = ceil(gauss_kern_size + fx/2);
 
-base_1 = sparse(zeros(2*edg+size_y, 2*edg+size_x));
+base_cent_1 = sparse(zeros(2*edg+size_y, 2*edg+size_x));
+base_periph_1 = sparse(zeros(2*edg+size_y, 2*edg+size_x));
 center_1_x = round(x0 + edg);
 center_1_y = round(y0 + edg);
+periph_1_x = round((x0-fx/2) + edg);
+periph_1_y = round((y0-fy/2) + edg);
 rad = (gauss_kern_size - 1) / 2;
-area_1_x = (center_1_x - rad:center_1_x + rad);
-area_1_y = (center_1_y - rad:center_1_y + rad);
-base_1(area_1_y, area_1_x) = gauss_kern;
+area_cent_1_x = (center_1_x - rad:center_1_x + rad);
+area_cent_1_y = (center_1_y - rad:center_1_y + rad);
+area_periph_1_x = (periph_1_x - rad:periph_1_x + rad);
+area_periph_1_y = (periph_1_y - rad:periph_1_y + rad);
+base_cent_1(area_cent_1_y, area_cent_1_x) = gauss_kern;
+base_periph_1(area_periph_1_y, area_periph_1_x) = gauss_kern;
 
 steps_y = 1;
 steps_x = 0;
 shift_y = round(fy);
 shift_x = 0;
-cropped_base = base_1(edg:edg-1+size_y, edg:edg-1+size_x);
-bases = reshape(cropped_base, [numel(cropped_base) 1]);
+cropped_base_cent = base_cent_1(edg:edg-1+size_y, edg:edg-1+size_x);
+cropped_base_periph = base_periph_1(edg:edg-1+size_y, edg:edg-1+size_x);
+bases_cent = reshape(cropped_base_cent, [numel(cropped_base_cent) 1]);
+bases_periph = reshape(cropped_base_periph, [numel(cropped_base_periph) 1]);
 h = waitbar(0,'Extracting bases...');
 while shift_x < size_x
     while shift_y < size_y
         waitbar((shift_x*size_x + shift_y)/(size_y*size_x));
         
-        base = circshift(base_1, [shift_y shift_x]);
+        base_cent = circshift(base_cent_1, [shift_y shift_x]);
+        base_periph = circshift(base_periph_1, [shift_y shift_x]);
 %         bases(:,:,end+1) = base(edg:edg-1+size_y, edg:edg-1+size_x);
-        cropped_base = base(edg:edg-1+size_y, edg:edg-1+size_x);
-        bases(:, end + 1) = reshape(cropped_base, [numel(cropped_base) 1]);
+        cropped_base_cent = base_cent(edg:edg-1+size_y, edg:edg-1+size_x);
+        cropped_base_periph = base_periph(edg:edg-1+size_y, edg:edg-1+size_x);
+        bases_cent(:, end + 1) = reshape(cropped_base_cent, [numel(cropped_base_cent) 1]);
+        bases_periph(:, end + 1) = reshape(cropped_base_periph, [numel(cropped_base_periph) 1]);
         steps_y = steps_y + 1;
         shift_y = round(steps_y * fy);
     end
+    base_periph = circshift(base_periph_1, [shift_y shift_x]);
+    cropped_base_periph = base_periph(edg:edg-1+size_y, edg:edg-1+size_x);
+    bases_periph(:, end + 1) = reshape(cropped_base_periph, [numel(cropped_base_periph) 1]);
+    
     steps_x = steps_x + 1;
     shift_x = round(steps_x * fx);
     maxY = steps_y;
@@ -174,6 +209,22 @@ while shift_x < size_x
     shift_y = 0;
     
 end
+while shift_y < size_y
+    waitbar((shift_x*size_x + shift_y)/(size_y*size_x));
+    base_periph = circshift(base_periph_1, [shift_y shift_x]);
+%         bases(:,:,end+1) = base(edg:edg-1+size_y, edg:edg-1+size_x);
+    cropped_base_periph = base_periph(edg:edg-1+size_y, edg:edg-1+size_x);
+    bases_periph(:, end + 1) = reshape(cropped_base_periph, [numel(cropped_base_periph) 1]);
+    steps_y = steps_y + 1;
+    shift_y = round(steps_y * fy);
+end
+
+base_periph = circshift(base_periph_1, [shift_y shift_x]);
+cropped_base_periph = base_periph(edg:edg-1+size_y, edg:edg-1+size_x);
+bases_periph(:, end + 1) = reshape(cropped_base_periph, [numel(cropped_base_periph) 1]);
+    
+
+cent_and_periph_bases = [bases_cent bases_periph];
 numspotsX = maxX;
 numspotsY = maxY;
 close(h)
