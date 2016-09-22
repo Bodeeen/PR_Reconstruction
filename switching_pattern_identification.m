@@ -124,8 +124,11 @@ x(2) = mod(x(2), x(1));
 x(4) = mod(x(4), x(3));
 
 % output
-pattern = x;
-
+if ~force_use_expected
+    pattern = x;
+else
+    pattern = [efx x(2) efy x(4)];
+end
 end
 
 %% Extracts the width of a peak given ydata, the peak position and a peak
