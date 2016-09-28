@@ -173,11 +173,11 @@ for ky = 0 : nsteps - 1
 end
 close (h)
 % figure
-imshow(central_signal,[])
-title('STHLM sig')
-figure
-imshow(central_signal_weights,[])
-title('STHLM w')
+% imshow(central_signal,[])
+% title('STHLM sig')
+% figure
+% imshow(central_signal_weights,[])
+% title('STHLM w')
 % normalize by weights
 central_signal = central_signal ./ central_signal_weights;
 peripheral_signal = peripheral_signal ./ peripheral_signal_weights;

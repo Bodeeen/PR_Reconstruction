@@ -84,7 +84,7 @@ phy  = angle(w(1, locy));
 
 % compute reference, now uses sin.*sin instead of Göttingens sin+sin
 [xi, yi] = ndgrid(1:dims(1), 1: dims(2));
-ref = cos(pi * xi / efx).^2 .* cos(pi * yi / efy).^2;
+ref = cos(pi * xi / efx).^2 + cos(pi * yi / efy).^2;
 w2 = fft2(ref);
 
 ref_phx = angle(w2(locx, 1));
@@ -100,20 +100,30 @@ ey0 = mod((ref_phy - phy) / (2 * pi), 1) * efy;
 % because the pattern was stationary and the sample was scanned
 addup = sum(data, 3, 'double');
 
-% initial parameters, lower and upper bounds
-x0 = [efx, ex0, efy, ey0];
-lb = [efx - 0.2, -Inf, efy - 0.2, -Inf];
-ub = [efx + 0.2, Inf, efy + 0.2, Inf];
-
+%Filter the addup to ease phase estimation
+% [f1,f2] = freqspace([dims(1) dims(2)],'meshgrid');
+% Hd = ones([dims(1) dims(2)]); 
+% r = sqrt(f1.^2 + f2.^2);
+% f = 2/efx;
+% fl = f-0.03;
+% fu = f+0.03;
+% Hd((r<fl)|(r>fu)) = 0;
+% kern = Gausskern(dims(1)/5, dims(1)/10);
+% kern = kern / sum(kern(:));
+% Hd = conv2(Hd, kern, 'same');
+% tf = fft2(addup);
+% tf_filt = ifftshift(fftshift(tf).*Hd);
+% addup_filt = ifft2(tf_filt);
+% addup_filt(addup_filt < 0) = 0;
+addup_filt = addup;
 % we use fmincon for maximizing correlation of calculated pattern and addup
 options = optimset('Display', 'off', 'UseParallel', 'never', 'Algorithm', 'active-set');
 if force_use_expected
     % initial parameters, lower and upper bounds
     x0 = [ex0, ey0];
-    lb = [-inf, -inf];
-    ub = [inf, inf];
-    f0 = [efx, efy];
-    x = fmincon(@(x)minimizer_fe(x, f0), double(x0), [], [], [], [], lb, ub, [], options);
+    lb = [0, 0];
+    ub = [efx, efy];
+    x = fmincon(@minimizer_fe, double(x0), [], [], [], [], lb, ub, [], options);
     x = [efx, x(1), efy, x(2)];
 else
     % initial parameters, lower and upper bounds
@@ -127,17 +137,17 @@ end
 % STHLM now uses sin.*sin instead of sin+sin as reference
 function corr = minimizer(x)
     % pattern
-    ref = cos(pi * (xi - x(2)) / x(1)).^2 .* cos(pi * (yi - x(4)) / x(3)).^2;
+    ref = cos(pi * (xi - x(2)) / x(1)).^2 + cos(pi * (yi - x(4)) / x(3)).^2;
     % correlation
-    corr = ref .* addup;
+    corr = ref .* addup_filt;
     corr = mean(corr(:));
     corr = -corr;
 end
-function corr = minimizer_fe(x, f)
+function corr = minimizer_fe(x)
     % pattern
-    ref = cos(pi * (xi - x(1)) / f(1)).^2 .*+ cos(pi * (yi - x(2)) / f(2)).^2;
+    ref = cos(pi * (xi - x(1)) / efx).^2 + cos(pi * (yi - x(2)) / efy).^2;
     % correlation
-    corr = ref .* addup;
+    corr = ref .* addup_filt;
     corr = mean(corr(:));
     corr = -corr;
 end

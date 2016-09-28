@@ -1,10 +1,10 @@
-function [data widefield]= import_data(camera_frames_file, camera_widefield_file, dark_frame_file, correct_for_bleaching)
+function [data widefield pattern_images]= import_data_and_pattern(camera_frames_file, camera_widefield_file, dark_frame_file, pattern_file, correct_for_bleaching)
 % Reads data (camera frame data) from a Matlab file, rotates it to our
 % needs and subtracts the background. Additionally can correct for
 % bleaching.
 
 %% argument check
-assert(nargin == 4, 'Wrong number of arguments!');
+assert(nargin == 5, 'Wrong number of arguments!');
 
 
 %% load dark frame and compute average value
@@ -53,6 +53,26 @@ elseif strcmp(format, 'hdf5')
     wide_images = hdf5read(camera_widefield_file, 'data');
 end
 
+%% Load pattern file
+
+split = strsplit(pattern_file, '.');
+format = split{end};
+
+if strcmp(format,'tif') || strcmp(format, 'tiff')
+    %% TIFF
+    info = imfinfo(pattern_file);
+    frames = size(info, 1);
+    pattern_images = imread(pattern_file, 1);
+    for i = 2:frames
+        pattern_images = cat(3, pattern_images, imread(pattern_file, i));
+    end
+    pattern_images = sum(pattern_images, 3);
+    pattern_images = rot90(flipud(pattern_images), -1);
+elseif strcmp(format, 'hdf5')
+%%HDF5
+    pattern_images = hdf5read(pattern_file, 'data');
+end
+
 widefield = mean(double(wide_images(:,:,1:50)), 3);
 button = questdlg('Crop data?', 'Cropping', 'Yes','No', 'Yes');
 switch button
@@ -67,16 +87,18 @@ switch button
         images = images(yrange,xrange, :);
         widefield = widefield(yrange,xrange);
         
-        X0bg = X0+rect(1); 
-        Y0bg = Y0+rect(2);
-        Xend_bg = X0bg+rect(3)-1;
-        Yend_bg = Y0bg+rect(4)-1;
-        background = background(Y0bg:Yend_bg, X0bg:Xend_bg) ;
+        X0big = X0+rect(1); 
+        Y0big = Y0+rect(2);
+        Xend_big = X0big+rect(3)-1;
+        Yend_big = Y0big+rect(4)-1;
+        background = background(Y0big:Yend_big, X0big:Xend_big);
+        pattern_images = pattern_images(Y0big:Yend_big, X0big:Xend_big, :);
     case 'No'
         % Matlab indexes from 1
         X0 = X0+1;
         Y0 = Y0+1;
         background = background(Y0:Y0+Height-1, X0:X0+Width-1);
+        pattern_images = pattern_images(Y0:Y0+Height-1, X0:X0+Width-1, :);
 end
 %% Correct for scanning acquiring one frame in beginning and one too few in the end
 images = images(:,:,2:end);

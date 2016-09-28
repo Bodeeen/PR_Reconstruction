@@ -1,5 +1,7 @@
 function [ S ] = Gausskern( size, fwhm )
 %Returns a 2D gaussian kernal, input size and fwhm
+size = round(size);
+fwhm = round(fwhm);
 S = zeros(size);
 rad = (size+1)/2;
 c = 2*(fwhm / 2.35)^2;

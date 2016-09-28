@@ -10,21 +10,21 @@ function [] = combine_camera_frames(B)
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.0615;   % camera pixel length [µm] in sample space
-scanning_period = 0.312;        % scanning period [µm] in sample space
-pattern_period = 0.312;         % Expected period of pattern in um
+scanning_period = 0.3125;        % scanning period [µm] in sample space
+pattern_period = 0.3125;         % Expected period of pattern in um
 activation_size = 0.050;
 diff_limit = 0.250; %um
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
-number_scanning_steps = 10;     % number of scanning steps (NOT SPOTS) in one direction
+number_scanning_steps = 20;     % number of scanning steps (NOT SPOTS) in one direction
     % total number of camera frames is (number_scanning_steps)^2
 recon_pixel_length = 0.02;            % pixel length [µm] of interpolated and combined frames
-pinhole_um = 0.050;
+pinhole_um = 0.150;
 
 %% load camera frames and subtract background frame and correct for photobleaching
 
 %%Ask if user wants to load new data or use same as last time
-answ = questdlg('Load new data?', 'Yes','No');
+answ = questdlg('Load new data?', 'Load data', 'Yes','No', 'Yes');
 switch answ
     case 'Yes'
         [LoadDataFileName,LoadDataPathName] = uigetfile({'*.*'}, 'Load data file');
@@ -53,8 +53,7 @@ switch answ
 end
 savename = strsplit(LoadDataFileName,'.');
 savename = savename{1};
-input_camera_darkframe = 'Darkframe.tif';
-[data widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe, true);
+input_camera_darkframe = 'Darkframe_fullchip.mat';
 
 steps = inputdlg('Input nr of scanning steps (not spots):');
 number_scanning_steps = str2double(steps{1});
@@ -67,9 +66,28 @@ recon_px_per_camera_px = recon_pixel_length / camera_pixel_length;
 diff_lim_px = diff_limit / camera_pixel_length;
 
 %% determine off switching pattern frequencies and offsets
-disp('Identifying pattern...')
-pattern = switching_pattern_identification(data, pattern_period / camera_pixel_length, true)
-% pattern = [3 0 3 0]
+answ_pat = questdlg('Use automatic or manual pattern detection?', 'Pattern selection', 'Automatic', 'Manual', 'Manual');
+
+switch answ_pat
+    case 'Automatic'
+        disp('Identifying pattern...')
+        pattern = switching_pattern_identification_160927(data, pattern_period / camera_pixel_length, true)
+    case 'Manual'
+        answ_pat = questdlg('Load seperate pattern file?', 'Pattern selection', 'Seperate', 'Use raw data', 'Seperate');
+        switch answ_pat
+            case 'Seperate'
+                [LoadPatternFileName,LoadPatternPathName] = uigetfile({'*.*'}, 'Load pattern file');
+                input_pattern_frames = strcat(LoadPatternPathName, LoadPatternFileName);
+                [data widefield pattern_images] = import_data_and_pattern(input_camera_frames, input_widefield_frames, input_camera_darkframe, input_pattern_frames, true);
+                pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, pattern_images);                
+            case 'Use raw data'
+                [data widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe, true);
+                pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, []);                
+
+        end
+end
+        
+        % pattern = [3 0 3 0]
 % pattern = [9.6571 0.8072 9.6568 0.8077]
 disp(pattern)
 % data = bleaching_correction_STHLM(data);
@@ -90,8 +108,8 @@ catch
 end
 disp('Extracting signal...')
 %%
-[centralgot, peripheralgot] = signal_extraction(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length);
-signalgot = max(centralgot - 0.8 * peripheralgot, 0);
+% [centralgot, peripheralgot] = signal_extraction(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length);
+% signalgot = max(centralgot - 0.8 * peripheralgot, 0);
 % % immax = max(signalgot(:));
 % % immin = min(signalgot(:));
 % % imstd = std(signalgot(:));
@@ -117,6 +135,7 @@ signalgot = max(centralgot - 0.8 * peripheralgot, 0);
 % 
 [centralsthlm, peripheralsthlm] = signal_extraction_STHLM(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
 signalsthlm = max(centralsthlm - 0.8 * peripheralsthlm, 0);
+
 % immax = max(signalsthlm(:));
 % immin = min(signalsthlm(:));
 % imstd = std(signalsthlm(:));
@@ -138,6 +157,7 @@ title('Stockholm algorithm')
 % save(output_filename, 'signal', 'pixel_length');
 % disp('Saving output...')
 % output_filename = inputdlg('Save data?','Save', 1, {'Input file name!'})
+
 pause
 answ = questdlg('Save image?','Yes','No');
 switch answ
@@ -146,6 +166,7 @@ switch answ
         fname = inputdlg('Chose name', 'Name',1,{savename});
         fname = fname{1};
         savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_pin_%.0fnm_act_%.0fnm', 1000*pinhole_um, 1000*activation_size));
+        disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;
         while exist(savepath_check) == 7
@@ -154,9 +175,9 @@ switch answ
         end
         savepath = savepath_check;
         mkdir(savepath)
-        output = signalgot - min(signalgot(:));
-        output = signalgot/max(signalgot(:));
-        imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Gott', '.tif'))
+%         output = signalgot - min(signalgot(:));
+%         output = signalgot/max(signalgot(:));
+%         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Gott', '.tif'))
         output = signalsthlm - min(signalsthlm(:));
         output = signalsthlm/max(signalsthlm(:));
         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif'))
