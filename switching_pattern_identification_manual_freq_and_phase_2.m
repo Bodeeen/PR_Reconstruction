@@ -26,6 +26,24 @@ if numel(pattern_images) == 0
 else
     addup = sum(pattern_images, 3);
 end
+% function  p = get_period(vec)
+%     [pks locs] = findpeaks(vec, 'MinPeakWidth', expected_value/4);
+        
+x_prof = mean(double(addup), 1);
+y_prof = mean(double(addup), 2);
+
+[pks_x locs_x] = findpeaks(x_prof, 'MinPeakWidth', expected_value/4);
+[pks_y locs_y] = findpeaks(y_prof, 'MinPeakWidth', expected_value/4);
+
+nr_p_x = length(pks_x);
+nr_p_y = length(pks_y);
+
+dist_x = locs_x(end) - locs_x(1);
+dist_y = locs_y(end) - locs_y(1);
+
+fx = dist_x / nr_p_x;
+fy = dist_y / nr_p_y;
+
 f = figure
 imshow(addup,[]);
 rect = round(getrect);
@@ -37,40 +55,12 @@ cropped = imresize(addup(yrange,xrange, :), scale);
 
 f = figure
 imshow(cropped,[]);
-[pix_x_1 pix_y_1] = ginput(1);
-pix_x_1 = rect(1) + pix_x_1/scale;
-pix_y_1 = rect(2) + pix_y_1/scale;
+[pix_x pix_y] = ginput(1);
 close(f)
 
-f = figure
-imshow(addup,[]);
-rect = round(getrect);
-close(f)
+phx = mod(rect(1) + pix_x/scale - 1, expected_value);
+phy = mod(rect(2) + pix_y/scale - 1, expected_value);
 
-xrange = rect(1):rect(1)+(rect(3)-1);
-yrange = rect(2):rect(2)+(rect(4)-1);
-cropped = imresize(addup(yrange,xrange, :), scale);
-
-f = figure
-imshow(cropped,[]);
-[pix_x_2 pix_y_2] = ginput(1);
-pix_x_2 = rect(1) + pix_x_2/scale;
-pix_y_3 =  rect(2) + pix_y_2/scale;
-close(f)
-
-cycles_x = abs(pix_x_1 - pix_x_2)/expected_value;
-diff_x = cycles_x - round(cycles_x);
-correction_x = diff_x/round(cycles_x);
-corrected_x = expected_value*(1 + correction_x);
-
-cycles_y = abs(pix_y_1 - pix_y_2)/expected_value;
-diff_y = cycles_y - round(cycles_y);
-correction_y = diff_y/round(cycles_y);
-corrected_y = expected_value*(1 + correction_y);
-
-phx = mod(pix_x_1 - 1, corrected_x);
-phy = mod(pix_y_1 - 1, corrected_y);
-
-pattern = [corrected_y phy corrected_x phx];
+pattern = [expected_value phy expected_value phx];
 end
 

@@ -1,4 +1,4 @@
-function [] = combine_camera_frames(B)
+function [] = combine_camera_frames()
 % Combines the camera frames of the parallelized RESOLFT microscope used in
 % the publication: 'Nanoscopy with more than a hundred thousand
 % "doughnuts"' by Andriy Chmyrov et al., to appear in Nature Methods, 2013
@@ -9,17 +9,17 @@ function [] = combine_camera_frames(B)
 % output_filename = 'recontructed.tif';
 
 %% some physical parameters of the setup
-camera_pixel_length = 0.0615;   % camera pixel length [µm] in sample space
-scanning_period = 0.3125;        % scanning period [µm] in sample space
-pattern_period = 0.3125;         % Expected period of pattern in um
+camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
+scanning_period = 1.25;        % scanning period [µm] in sample space
+pattern_period = 1.25;         % Expected period of pattern in um
 activation_size = 0.050;
 diff_limit = 0.250; %um
+corr_bleach = 'additive'; % proporional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
-number_scanning_steps = 20;     % number of scanning steps (NOT SPOTS) in one direction
     % total number of camera frames is (number_scanning_steps)^2
 recon_pixel_length = 0.02;            % pixel length [µm] of interpolated and combined frames
-pinhole_um = 0.150;
+pinhole_um = 0.400;
 
 %% load camera frames and subtract background frame and correct for photobleaching
 
@@ -53,17 +53,10 @@ switch answ
 end
 savename = strsplit(LoadDataFileName,'.');
 savename = savename{1};
-input_camera_darkframe = 'Darkframe_fullchip.mat';
-
-steps = inputdlg('Input nr of scanning steps (not spots):');
-number_scanning_steps = str2double(steps{1});
-
-% derived parameters
-shift_per_step = scanning_period / number_scanning_steps / camera_pixel_length;
-    % shift per scanning step [camera pixels]
-recon_px_per_camera_px = recon_pixel_length / camera_pixel_length;
-    % length of pixel of combined frames in camera pixels
-diff_lim_px = diff_limit / camera_pixel_length;
+input_camera_darkframe = 'Darkframe_defect_corr_ON.mat';
+% 
+% steps = inputdlg('Input nr of scanning steps (not spots):');
+% number_scanning_steps = str2double(steps{1});
 
 %% determine off switching pattern frequencies and offsets
 answ_pat = questdlg('Use automatic or manual pattern detection?', 'Pattern selection', 'Automatic', 'Manual', 'Manual');
@@ -71,6 +64,7 @@ answ_pat = questdlg('Use automatic or manual pattern detection?', 'Pattern selec
 switch answ_pat
     case 'Automatic'
         disp('Identifying pattern...')
+        [data, widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe);
         pattern = switching_pattern_identification_160927(data, pattern_period / camera_pixel_length, true)
     case 'Manual'
         answ_pat = questdlg('Load seperate pattern file?', 'Pattern selection', 'Seperate', 'Use raw data', 'Seperate');
@@ -78,16 +72,41 @@ switch answ_pat
             case 'Seperate'
                 [LoadPatternFileName,LoadPatternPathName] = uigetfile({'*.*'}, 'Load pattern file');
                 input_pattern_frames = strcat(LoadPatternPathName, LoadPatternFileName);
-                [data widefield pattern_images] = import_data_and_pattern(input_camera_frames, input_widefield_frames, input_camera_darkframe, input_pattern_frames, true);
-                pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, pattern_images);                
+                [data, widefield, pattern_images] = import_data_and_pattern(input_camera_frames, input_widefield_frames, input_camera_darkframe, input_pattern_frames);
+                pattern = switching_pattern_identification_manual_freq_and_phase(data, pattern_period / camera_pixel_length, pattern_images);                
             case 'Use raw data'
-                [data widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe, true);
+                [data, widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe);
                 pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, []);                
 
         end
 end
-        
-        % pattern = [3 0 3 0]
+
+switch corr_bleach
+    case 'proportional'
+        data = bleaching_correction(data);
+    case 'additive'
+        data = bleaching_correction_STHLM(data);
+    case 'no'
+        a = 1
+end
+
+
+number_scanning_steps = sqrt(size(data,3)) - 1;     % number of scanning steps (NOT SPOTS) in one direction
+
+%Check that number of frames is correct
+if(round(number_scanning_steps) ~= number_scanning_steps)
+    h = errordlg('Number of frames is super strange!', 'Huh!?')
+    return
+end
+% derived parameters
+shift_per_step = scanning_period / number_scanning_steps / camera_pixel_length;
+    % shift per scanning step [camera pixels]
+recon_px_per_camera_px = recon_pixel_length / camera_pixel_length;
+    % length of pixel of combined frames in camera pixels
+diff_lim_px = diff_limit / camera_pixel_length;
+
+
+% pattern = [3 0 3 0]
 % pattern = [9.6571 0.8072 9.6568 0.8077]
 disp(pattern)
 % data = bleaching_correction_STHLM(data);
@@ -159,7 +178,7 @@ title('Stockholm algorithm')
 % output_filename = inputdlg('Save data?','Save', 1, {'Input file name!'})
 
 pause
-answ = questdlg('Save image?','Yes','No');
+answ = questdlg('Save image?', 'Save', 'Yes','No', 'Yes');
 switch answ
     case 'Yes'
         dname = uigetdir(LoadDataPathName);

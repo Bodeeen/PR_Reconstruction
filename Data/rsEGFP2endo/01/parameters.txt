@@ -1,0 +1,29 @@
+off = 20
+readout = 25
+act = 150
+
+scan = rsEFGP2_260916_microlenses
+
+
+[Pixel_par_values]
+endTIS = 0.0
+start405 = 0.0
+end355 = 0.01
+startTIS = 0.0
+end405 = 0.001
+endCAM = 0.021
+start355 = 0.002
+end488 = 0.021
+start488 = 0.011
+startCAM = 0.011
+
+[Scan_par_values]
+step_size = 0.025
+sequence_time = 0.026
+width = 1.25
+height = 1.25
+
+[Modes]
+scan_mode = FOV scan
+scan_or_not = True
+
