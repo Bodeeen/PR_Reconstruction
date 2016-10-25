@@ -1,23 +1,22 @@
 
 %Script to correct for individual pixel gain variations
-if exist('illumination_stack') ~= 1
+if exist('Gain_char_defect_corr_ON') ~= 1
     [LoadIlluminationFileName,LoadIlluminationPathName] = uigetfile({'*.*'}, 'Load illumination file');
     load(strcat(LoadIlluminationPathName, LoadIlluminationFileName));
 end
-if exist('gains') ~= 1
-    [LoadGainFileName,LoadGainPathName] = uigetfile({'*.*'}, 'Load gain file');
-    load(strcat(LoadGainPathName, LoadGainFileName));
-end
-if exist('background') ~= 1
-    [LoadBGFileName,LoadBGPathName] = uigetfile({'*.*'}, 'Load background file');
-    load(strcat(LoadBGPathName, LoadBGFileName));
-end
+
+% Extract b1 and b2 from Gain_char... struct
+b1 = Gain_char_defect_corr_ON.k;
+b2 = Gain_char_defect_corr_ON.m;
+
+%Load path to data
 [LoadDataFileName,LoadDataPathName] = uigetfile({'*.*'}, 'Load data file');
 data_path = strcat(LoadDataPathName, LoadDataFileName);
 
 split = strsplit(data_path, '.');
 format = split{end};
 
+% Load data to correct
 if strcmp(format,'tif') || strcmp(format, 'tiff')
     %% TIFF
     info = imfinfo(data_path);
@@ -45,51 +44,28 @@ end
 % Matlab indexes from 1
 X0 = X0+1;
 Y0 = Y0+1;
-illumination_stack_cropped = illumination_stack(Y0:Y0+Height-1, X0:X0+Width-1,:);
-gains_cropped = gains(Y0:Y0+Height-1, X0:X0+Width-1,:);
-background_cropped = background(Y0:Y0+Height-1, X0:X0+Width-1);
+
+%Crop gain corr maps according to data
+b1 = b1(Y0:Y0+Height-1, X0:X0+Width-1);
+b2 = b2(Y0:Y0+Height-1, X0:X0+Width-1);
 
 nframes = size(data, 3);
 
-%Can't convert to double due to memory limitations
-data = data - repmat(uint16(background_cropped),[1 1 nframes]);
-
-ill_levels = size(illumination_stack, 3);
-h = waitbar(0, 'Correcting gain...')
+h = waitbar(0, 'Correcting frames...')
 size_x = size(data, 2);
 size_y = size(data, 1);
-ccfor f = 1:nframes
+% data_corr = zeros(size(data));
+for f = 1:nframes
     waitbar(f/nframes)
-    for yc = 1:size_y
-        for xc = 1:size_x
-            pix_v = data(yc, xc, f);
-            i = 0;
-            if pix_v >= illumination_stack_cropped(yc, xc, end)
-                data(yc, xc, f) = pix_v / gains_cropped(yc, xc, end);
-            else
-                while pix_v > illumination_stack_cropped(yc,xc,i+1)
-                    i = i+1;
-                end
-                if i>0
-                    lower = illumination_stack_cropped(yc, xc, i);
-                    upper = illumination_stack_cropped(yc, xc, i+1);
-                    interval = upper - lower;
-                    interp_v = (double(pix_v) - lower)/interval * gains_cropped(yc,yc,i+1) + (upper - double(pix_v))/interval * gains_cropped(yc,yc,i);
-                else
-                    interp_v = gains_cropped(yc, xc, 1);
-                end
-                data(yc, xc, f) = uint16(double(pix_v) / interp_v);
-            end
-        end
-    end
+    data_corr(:,:,f) = (double(data(:,:,f)) - b2) ./ b1;
 end
 close(h)
 
 split = strsplit(LoadDataFileName, '.')
 filename = strcat(split{1}, '_corrected', '.h5')
 pathname = strcat(LoadDataPathName, filename);
-h5create(pathname, '/data', size(data));
-h5write(pathname, '/data', data);
+h5create(pathname, '/data', size(data_corr));
+h5write(pathname, '/data', data_corr);
 
 h5writeatt(pathname, '/data', 'Y0', X0);
 h5writeatt(pathname, '/data', 'X0', Y0);

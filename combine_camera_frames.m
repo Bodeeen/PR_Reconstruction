@@ -10,18 +10,13 @@ function [] = combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-scanning_period = 1.25;        % scanning period [µm] in sample space
-pattern_period = 1.25;         % Expected period of pattern in um
-activation_size = 0.050;
 diff_limit = 0.250; %um
-corr_bleach = 'additive'; % proporional, additive or no
+corr_bleach = 'proportional'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
     % total number of camera frames is (number_scanning_steps)^2
 recon_pixel_length = 0.02;            % pixel length [µm] of interpolated and combined frames
-pinhole_um = 0.400;
-
-%% load camera frames and subtract background frame and correct for photobleaching
+activation_size = 0.050;
 
 %%Ask if user wants to load new data or use same as last time
 answ = questdlg('Load new data?', 'Load data', 'Yes','No', 'Yes');
@@ -54,9 +49,19 @@ end
 savename = strsplit(LoadDataFileName,'.');
 savename = savename{1};
 input_camera_darkframe = 'Darkframe_defect_corr_ON.mat';
-% 
-% steps = inputdlg('Input nr of scanning steps (not spots):');
-% number_scanning_steps = str2double(steps{1});
+
+% Paramater set for type of acquisition
+answ_ulens = questdlg('Microlens data or widefield?', 'Microlenses?', 'Microlenses','Widefield', 'Microlenses');
+switch answ_ulens
+    case 'Microlenses'
+        scanning_period = 1.25;        % scanning period [µm] in sample space
+        pattern_period = 1.25;         % Expected period of pattern in um
+        pinhole_um = 0.400;
+    case 'Widefield'
+        scanning_period = 0.3125;        % scanning period [µm] in sample space
+        pattern_period = 0.3125;         % Expected period of pattern in um
+        pinhole_um = 0.150;
+end
 
 %% determine off switching pattern frequencies and offsets
 answ_pat = questdlg('Use automatic or manual pattern detection?', 'Pattern selection', 'Automatic', 'Manual', 'Manual');
@@ -96,7 +101,7 @@ number_scanning_steps = sqrt(size(data,3)) - 1;     % number of scanning steps (
 %Check that number of frames is correct
 if(round(number_scanning_steps) ~= number_scanning_steps)
     h = errordlg('Number of frames is super strange!', 'Huh!?')
-    return
+    returnsq
 end
 % derived parameters
 shift_per_step = scanning_period / number_scanning_steps / camera_pixel_length;

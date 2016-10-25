@@ -1,7 +1,0 @@
-STACK_AVERAGES contains just the raw averaged stacks at different intensities over ~1000 frames
-
-MEAN_STACK contains the means at each intenity avter correcting for offset.
-
-REL_GAIN contains the relative gain of each pixel as conpared to its neighbors for the different intensities.
-
-ILLUMINATION_MAP contains the low-pass filtered mean stack representing the illumination intensities at each int.

@@ -23,7 +23,7 @@ if strcmp(format,'tif') || strcmp(format, 'tiff')
     for i = 2:frames
         images = cat(3, images, imread(camera_frames_file, i));
     end
-elseif strcmp(format, 'hdf5')
+elseif strcmp(format, 'hdf5') || strcmp(format, 'h5')
 %%HDF5
     images = hdf5read(camera_frames_file, 'data');
 %Get cropping parameters from hdf5 file.
@@ -48,7 +48,7 @@ if strcmp(format,'tif') || strcmp(format, 'tiff')
     for i = 2:frames
         wide_images = cat(3, wide_images, imread(camera_frames_file, i));
     end
-elseif strcmp(format, 'hdf5')
+elseif strcmp(format, 'hdf5') || strcmp(format, 'h5')
 %%HDF5
     wide_images = hdf5read(camera_widefield_file, 'data');
 end
@@ -104,8 +104,8 @@ end
 images = images(:,:,2:end);
 images(:,:,end+1) = images(:,:,end);
 
-data = double(images) - repmat(background,[1 1 nframes]);
-
+% data = double(images) - repmat(background,[1 1 nframes]);
+data = images;
 data = max(data, 0);
     % after subtraction of the average background some background pixels could be slightly negative
 clear h;

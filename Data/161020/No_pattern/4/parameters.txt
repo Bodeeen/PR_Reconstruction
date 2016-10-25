@@ -1,0 +1,5 @@
+OFF = 125 mW, 8ms
+EXC = 200 mW, 10ms
+ON = 20mW, 1 ms
+
+Scan = 20-10-2016 rsGFP2 microlenses
