@@ -16,7 +16,7 @@ corr_bleach = 'proportional'; % proportional, additive or no
 % calculation when creating the simulated data.
     % total number of camera frames is (number_scanning_steps)^2
 recon_pixel_length = 0.02;            % pixel length [µm] of interpolated and combined frames
-activation_size = 0.050;
+activation_size = 0.040;
 
 %%Ask if user wants to load new data or use same as last time
 answ = questdlg('Load new data?', 'Load data', 'Yes','No', 'Yes');
@@ -56,7 +56,7 @@ switch answ_ulens
     case 'Microlenses'
         scanning_period = 1.25;        % scanning period [µm] in sample space
         pattern_period = 1.25;         % Expected period of pattern in um
-        pinhole_um = 0.400;
+        pinhole_um = 0.100;
     case 'Widefield'
         scanning_period = 0.3125;        % scanning period [µm] in sample space
         pattern_period = 0.3125;         % Expected period of pattern in um
@@ -101,7 +101,7 @@ number_scanning_steps = sqrt(size(data,3)) - 1;     % number of scanning steps (
 %Check that number of frames is correct
 if(round(number_scanning_steps) ~= number_scanning_steps)
     h = errordlg('Number of frames is super strange!', 'Huh!?')
-    returnsq
+    return
 end
 % derived parameters
 shift_per_step = scanning_period / number_scanning_steps / camera_pixel_length;
@@ -114,6 +114,7 @@ diff_lim_px = diff_limit / camera_pixel_length;
 % pattern = [3 0 3 0]
 % pattern = [9.6571 0.8072 9.6568 0.8077]
 disp(pattern)
+
 % data = bleaching_correction_STHLM(data);
 
 %% Enhance the widefield for fairer comparison
@@ -159,6 +160,9 @@ disp('Extracting signal...')
 % 
 [centralsthlm, peripheralsthlm] = signal_extraction_STHLM(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
 signalsthlm = max(centralsthlm - 0.8 * peripheralsthlm, 0);
+% [centralsthlm, B] = signal_extraction_LS(data, pattern, [], diff_limit, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+% signalsthlm = centralsthlm;
+
 
 % immax = max(signalsthlm(:));
 % immin = min(signalsthlm(:));

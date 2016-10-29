@@ -129,10 +129,10 @@ for kx = 0 : nsteps - 1
         % coefficient
         for pixy = pixy_s:pixy_e
             for pixx = pixx_s:pixx_e
-                % Determine witch central coefficient the pixel belongs to (x and y)
+                % Determine which central coefficient the pixel belongs to (x and y)
                 cy = 2 + floor((pixy - dist_first_periph_y)/fy_up);
                 cx = 2 + floor((pixx - dist_first_periph_x)/fx_up);
-                % Determine witch peripheral coefficient the pixel belongs to (x and y)
+                % Determine which peripheral coefficient the pixel belongs to (x and y)
                 py = 2 + floor((pixy - dist_first_cent_y)/fy_up);
                 px = 2 + floor((pixx - dist_first_cent_x)/fx_up);
                 % Add pixel value to coefficient

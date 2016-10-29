@@ -72,8 +72,7 @@ close(h)
 
 %% Activation gaussian is the 2D gaussian that corresponds in size to the
 %  activation spot. Used to recontrucs the image.
-act_gauss_size = 1+2*round(activation_size_px/objp)
-;
+act_gauss_size = 1+2*round(activation_size_px/objp);
 activation_gaussian = Gausskern(act_gauss_size, activation_size_px/objp);
 
 
