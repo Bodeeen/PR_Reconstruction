@@ -46,8 +46,7 @@ switch answ
         LoadDataFileName = NAME;
         
 end
-savename = strsplit(LoadDataFileName,'.');
-savename = savename{1};
+
 input_camera_darkframe = 'Darkframe_defect_corr_ON.mat';
 
 % Paramater set for type of acquisition
@@ -158,10 +157,16 @@ disp('Extracting signal...')
 % imshow(signalLS,[])
 % title('Least squares algorithm')
 % 
-[centralsthlm, peripheralsthlm] = signal_extraction_STHLM(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
-signalsthlm = max(centralsthlm - 0.8 * peripheralsthlm, 0);
-% [centralsthlm, B] = signal_extraction_LS(data, pattern, [], diff_limit, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
-% signalsthlm = centralsthlm;
+% [centralsthlm, peripheralsthlm] = signal_extraction_STHLM(data, pattern, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+% signalsthlm = max(centralsthlm - 0.8 * peripheralsthlm, 0);
+
+%Show widefield image
+figure('name', 'Widefield')
+imshow(widefield,[])
+bp_fac = inputdlg('BG subtraction factor?');
+bp_fac = str2num(bp_fac{1});
+[signalsthlm] = signal_extraction_BandPass(data, bp_fac, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+
 
 
 % immax = max(signalsthlm(:));
@@ -170,12 +175,10 @@ signalsthlm = max(centralsthlm - 0.8 * peripheralsthlm, 0);
 % snr = 10*log10((immax-immin)/imstd);
 % % Plot
 figure('name', sprintf('Activation size (nm): %.1f \n Pinhole size (nm): %.1f', 1000*activation_size, 1000*pinhole_um))
-subplot(1,2,1)
-imshow(widefield,[])
-subplot(1,2,2)
 imshow(signalsthlm,[])
 colormap('hot')
-title('Stockholm algorithm')
+title('Reconstructed')
+pause
 
 
 
@@ -186,14 +189,32 @@ title('Stockholm algorithm')
 % disp('Saving output...')
 % output_filename = inputdlg('Save data?','Save', 1, {'Input file name!'})
 
-pause
-answ = questdlg('Save image?', 'Save', 'Yes','No', 'Yes');
-switch answ
-    case 'Yes'
+answ = questdlg('Action?', 'Action?', 'Save image', 'Change BG subtr.', 'Exit', 'Change BG subtr.');
+while ~strcmp(answ, 'Exit')
+    switch answ
+        case 'Save image'
+            save_image(widefield, signalsthlm, bp_fac, LoadDataFileName, LoadDataPathName);
+            answ = questdlg('Action?', 'Action?', 'Change BG subtr.','Exit', 'Change BG subtr.');
+        case 'Change BG subtr.'
+            bp_fac = inputdlg('New BG subtraction factor?');
+            bp_fac = str2num(bp_fac{1});
+            [signalsthlm] = signal_extraction_BandPass(data, bp_fac, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+            imshow(signalsthlm,[])
+            colormap('hot')
+            title('Reconstructed')
+            pause
+            answ = questdlg('Action?', 'Action?', 'Save image', 'Change BG subtr.', 'Exit', 'Change BG subtr.');
+    end
+end
+end
+
+function save_image(widefield, recon, bp_fac, LoadDataFileName, LoadDataPathName)
+        savename = strsplit(LoadDataFileName,'.');
+        savename = savename{1};
         dname = uigetdir(LoadDataPathName);
         fname = inputdlg('Chose name', 'Name',1,{savename});
         fname = fname{1};
-        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_pin_%.0fnm_act_%.0fnm', 1000*pinhole_um, 1000*activation_size));
+        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_pin_%.2f_bg_sub_fac', bp_fac));
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;
@@ -203,21 +224,10 @@ switch answ
         end
         savepath = savepath_check;
         mkdir(savepath)
-%         output = signalgot - min(signalgot(:));
-%         output = signalgot/max(signalgot(:));
-%         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Gott', '.tif'))
-        output = signalsthlm - min(signalsthlm(:));
-        output = signalsthlm/max(signalsthlm(:));
+        output = recon - min(recon(:));
+        output = output/max(output(:));
         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif'))
-%         output = signalLS - min(signalLS(:));
-%         output = signalLS/max(signalLS(:));
-%         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_LS', '.tif'))
         widefield = widefield - min(widefield(:));
         widefield = widefield/max(widefield(:));
         imwrite(widefield, strcat(savepath, '\', fname, '_WF', '.tif'))
-        enhancedWF = enhancedWF - min(enhancedWF(:));
-        enhancedWF = enhancedWF/max(enhancedWF(:));
-        imwrite(enhancedWF, strcat(savepath, '\', fname, '_ENH_WF', '.tif'))
-end
-reconstructed = signalgot;
 end
