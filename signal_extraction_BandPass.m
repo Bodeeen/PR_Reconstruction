@@ -56,9 +56,11 @@ for x = 1:nulls_x
     xind = xind + fr_p_line;
 end
 %%Handle the sometimes not representable frame values
+%Make image w/o the frame
 wo_frame = reconstructed(1+fr_p_line+1:end-fr_p_line, 1+fr_p_line:end-fr_p_line);
 minvalue = min(wo_frame(:));
 maxvalue = max(wo_frame(:));
+%Clamp values to min/max of inner image
 reconstructed(reconstructed < minvalue) = minvalue;
 reconstructed(reconstructed > maxvalue) = maxvalue;
 
@@ -69,12 +71,12 @@ function [dnull, dy, dx, nulls_y, nulls_x, B] = make_presets(size_y, size_x, fy,
 %Extract distances in x and y to closest null
 [yi,xi] = ndgrid(1:size_y, 1:size_x);
 dx = mod(xi - x0, fx);
-nx = ceil((xi + x0)/fx);
+nx = ceil((xi + fx/2 - x0)/fx);
 h = dx > fx / 2;
 dx(h) = dx(h) - fx;
 
 dy = mod(yi - y0, fy);
-ny = ceil((yi + y0)/fy);
+ny = ceil((yi - y0 + fy/2)/fy);
 h = dy > fy / 2;
 dy(h) = dy(h) - fy;
 %Absolute distance
