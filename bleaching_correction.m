@@ -1,4 +1,4 @@
-function [corrected] = bleaching_correction(data)
+function [data] = bleaching_correction(data)
 % Bleaching can induce a decay in the total signal collected in each frame.
 % Here we divide the total signal per frame by this decay.
 
@@ -16,9 +16,7 @@ v = v / mean(v); % so we divide by 1 on average (total counts aren't distorted t
 
 %% create output data array and fill it with camera frames divided by
 % correction factor
-corrected = zeros(dims);
 for kf = 1 : nframes
-    corrected(:, :, kf) = data(:, :, kf) ./ v(kf);
+    data(:, :, kf) = data(:, :, kf) ./ v(kf);
 end
-corr_av = squeeze(sum(sum(corrected, 1), 2));
 end

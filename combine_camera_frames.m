@@ -1,4 +1,4 @@
-function [] = combine_camera_frames()
+function [adjusted] = combine_camera_frames()
 % Combines the camera frames of the parallelized RESOLFT microscope used in
 % the publication: 'Nanoscopy with more than a hundred thousand
 % "doughnuts"' by Andriy Chmyrov et al., to appear in Nature Methods, 2013
@@ -55,7 +55,7 @@ switch answ_ulens
     case 'Microlenses'
         scanning_period = 1.25;        % scanning period [µm] in sample space
         pattern_period = 1.25;         % Expected period of pattern in um
-        pinhole_um = 0.100;
+        pinhole_um = 0.500;
     case 'Widefield'
         scanning_period = 0.3125;        % scanning period [µm] in sample space
         pattern_period = 0.3125;         % Expected period of pattern in um
@@ -163,25 +163,15 @@ disp('Extracting signal...')
 %Show widefield image
 figure('name', 'Widefield')
 imshow(widefield,[])
-bp_fac = inputdlg('BG subtraction factor?');
-bp_fac = str2num(bp_fac{1});
-[signalsthlm] = signal_extraction_BandPass(data, bp_fac, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+[central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
 
+fr_p_line = sqrt(size(data, 3));
+[adjusted bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_line);
 
-
-% immax = max(signalsthlm(:));
-% immin = min(signalsthlm(:));
-% imstd = std(signalsthlm(:));
-% snr = 10*log10((immax-immin)/imstd);
-% % Plot
-figure('name', sprintf('Activation size (nm): %.1f \n Pinhole size (nm): %.1f', 1000*activation_size, 1000*pinhole_um))
-imshow(signalsthlm,[])
+h = figure('name', sprintf('Backgroun subtraction : %.2f', bg_sub));
+imshow(adjusted,[])
 colormap('hot')
 title('Reconstructed')
-pause
-
-
-
 
 
 % saving again
@@ -189,23 +179,23 @@ pause
 % disp('Saving output...')
 % output_filename = inputdlg('Save data?','Save', 1, {'Input file name!'})
 
-answ = questdlg('Action?', 'Action?', 'Save image', 'Change BG subtr.', 'Exit', 'Change BG subtr.');
+answ = questdlg('Action?', 'Action?', 'Save image', 'Change adjustments.', 'Exit', 'Change adjustments.');
+close(h)
 while ~strcmp(answ, 'Exit')
     switch answ
         case 'Save image'
-            save_image(widefield, signalsthlm, bp_fac, LoadDataFileName, LoadDataPathName);
-            answ = questdlg('Action?', 'Action?', 'Change BG subtr.','Exit', 'Change BG subtr.');
-        case 'Change BG subtr.'
-            bp_fac = inputdlg('New BG subtraction factor?');
-            bp_fac = str2num(bp_fac{1});
-            [signalsthlm] = signal_extraction_BandPass(data, bp_fac, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
-            imshow(signalsthlm,[])
+            save_image(widefield, adjusted, bg_sub, LoadDataFileName, LoadDataPathName);
+            answ = questdlg('Action?', 'Action?', 'Change adjustments.','Exit', 'Change adjustments.');
+        case 'Change adjustments.'
+            [adjusted bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_line);
+            imshow(adjusted,[])
             colormap('hot')
             title('Reconstructed')
             pause
-            answ = questdlg('Action?', 'Action?', 'Save image', 'Change BG subtr.', 'Exit', 'Change BG subtr.');
+            answ = questdlg('Action?', 'Action?', 'Save image', 'Change adjustments.', 'Exit', 'Change BG subtr.');
     end
 end
+
 end
 
 function save_image(widefield, recon, bp_fac, LoadDataFileName, LoadDataPathName)
@@ -230,4 +220,44 @@ function save_image(widefield, recon, bp_fac, LoadDataFileName, LoadDataPathName
         widefield = widefield - min(widefield(:));
         widefield = widefield/max(widefield(:));
         imwrite(widefield, strcat(savepath, '\', fname, '_WF', '.tif'))
+end
+
+function shifted_im = shift_columns(im, pixels, columns_per_square)
+
+    x_coords = 1:size(im, 2);
+
+    x_coords = mod(x_coords, columns_per_square);
+    selection_bool = mod(x_coords, 2) == 0;
+
+    selection = im(:, selection_bool);
+
+    size_selection_y = size(selection, 1);
+    size_selection_x = size(selection, 2);
+    [yi xi] = ndgrid(1:size_selection_y, 1:size_selection_x);
+
+    yi_shifted = yi + pixels;
+
+    shifted_selection = interp2(selection, xi, yi_shifted);
+    shifted_selection(isnan(shifted_selection)) = min(im(:));
+    im(:,selection_bool) = shifted_selection;
+    shifted_im = im;
+
+end
+
+function [adjusted, bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_line)
+    answ = 'Yes'
+    h = figure
+    while strcmp(answ, 'Yes')
+        parameters = inputdlg({'Background subtraction', 'Nr of pixels to shift?'}, 'Parameter', 1, {'0.7','3'})
+        bg_sub = str2double(parameters{1});
+        pixels = str2double(parameters{2});
+        sr_signal = central_signal - bg_sub*bg_signal;
+        adjusted = shift_columns(sr_signal, pixels, fr_p_line);
+        imshow(adjusted,[])
+        colormap('hot')
+        title('Shifted columns')
+        pause
+        answ = questdlg('Change adjustments?', 'Change adjustments?', 'Yes', 'No', 'No');
+    end
+    close(h)
 end

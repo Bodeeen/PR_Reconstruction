@@ -171,7 +171,7 @@ for ky = 0 : nsteps - 1
         peripheral_signal_weights = peripheral_signal_weights + periph_w_shifted;
     end
 end
-close (h)
+close(h)
 % figure
 % imshow(central_signal,[])
 % title('STHLM sig')
