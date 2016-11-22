@@ -58,7 +58,8 @@ elseif strcmp(format, 'hdf5') || strcmp(format, 'h5')
 end
 
 widefield = mean(double(wide_images), 3);
-button = questdlg('Crop data?', 'Cropping', 'Yes','No', 'Yes');
+% button = questdlg('Crop data?', 'Cropping', 'Yes','No', 'Yes');
+button = 'No'
 switch button
     case 'Yes'
         im = sum(images, 3);
@@ -84,6 +85,7 @@ switch button
 end
 %% Correct for scanning acquiring one frame in beginning and one too few in the end
 images = images(:,:,2:end);
+images(:,:,end+1) = images(:,:,end);
 images(:,:,end+1) = images(:,:,end);
 
 % data = double(images) - repmat(background,[1 1 nframes]);
