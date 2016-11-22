@@ -73,7 +73,7 @@ elseif strcmp(format, 'hdf5')
     pattern_images = hdf5read(pattern_file, 'data');
 end
 
-widefield = mean(double(wide_images(:,:,1:50)), 3);
+widefield = mean(double(wide_images(:,:,1:end)), 3);
 button = questdlg('Crop data?', 'Cropping', 'Yes','No', 'Yes');
 switch button
     case 'Yes'
@@ -103,6 +103,10 @@ end
 %% Correct for scanning acquiring one frame in beginning and one too few in the end
 images = images(:,:,2:end);
 images(:,:,end+1) = images(:,:,end);
+if round(sqrt(size(images, 3))) ~= sqrt(size(images, 3))
+    images = cat(3, images(:,:,1), images);
+end
+
 
 % data = double(images) - repmat(background,[1 1 nframes]);
 data = images;

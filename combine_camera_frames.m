@@ -18,7 +18,7 @@ corr_bleach = 'proportional'; % proportional, additive or no
 recon_pixel_length = 0.02;            % pixel length [µm] of interpolated and combined frames
 activation_size = 0.040;
 
-%%Ask if user wants to load new data or use same as last time
+%%Ask if user wants to load new data or use sam e as last time
 answ = questdlg('Load new data?', 'Load data', 'Yes','No', 'Yes');
 switch answ
     case 'Yes'
