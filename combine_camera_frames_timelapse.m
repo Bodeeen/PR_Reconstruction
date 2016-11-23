@@ -53,10 +53,10 @@ switch answ_pat
             case 'Seperate'
                 [LoadPatternFileName,LoadPatternPathName] = uigetfile({'*.*'}, 'Load pattern file');
                 input_pattern_frames = strcat(LoadPatternPathName, LoadPatternFileName);
-                [data, widefield, pattern_images] = import_data_and_pattern(input_camera_frames, input_widefield_frames, input_camera_darkframe, input_pattern_frames);
+                [data, widefield, pattern_images] = import_data_and_pattern_no_WF(input_camera_frames, input_camera_darkframe, input_pattern_frames);
                 pattern = switching_pattern_identification_manual_freq_and_phase(data, pattern_period / camera_pixel_length, pattern_images);                
             case 'Use raw data'
-                [data, widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe);
+                data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
                 pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, []);                
 
         end
@@ -88,8 +88,7 @@ seq = adjusted;
 
 for i = 2:length(fileNames)
     input_camera_frames = strcat(LoadDataPathName, '\', fileNames{i});
-    input_widefield_frames = strcat(LoadDataPathName, '\', fileNames{i});
-    [data, widefield] = import_data(input_camera_frames, input_widefield_frames, input_camera_darkframe);
+    data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
     %Check that number of frames is correct
     if(round(number_scanning_steps) ~= number_scanning_steps)
         h = errordlg('Number of frames is super strange!', 'Huh!?')
