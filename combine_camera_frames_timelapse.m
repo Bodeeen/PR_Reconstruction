@@ -53,7 +53,7 @@ switch answ_pat
             case 'Seperate'
                 [LoadPatternFileName,LoadPatternPathName] = uigetfile({'*.*'}, 'Load pattern file');
                 input_pattern_frames = strcat(LoadPatternPathName, LoadPatternFileName);
-                [data, widefield, pattern_images] = import_data_and_pattern_no_WF(input_camera_frames, input_camera_darkframe, input_pattern_frames);
+                [data, pattern_images] = import_data_and_pattern_no_WF(input_camera_frames, input_camera_darkframe, input_pattern_frames);
                 pattern = switching_pattern_identification_manual_freq_and_phase(data, pattern_period / camera_pixel_length, pattern_images);                
             case 'Use raw data'
                 data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
