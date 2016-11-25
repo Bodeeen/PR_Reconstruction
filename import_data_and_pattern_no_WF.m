@@ -1,4 +1,4 @@
-function [data pattern_images]= import_data_and_pattern_no_WF(camera_frames_file, camera_widefield_file, dark_frame_file, pattern_file)
+function [data pattern_images]= import_data_and_pattern_no_WF(camera_frames_file, dark_frame_file, pattern_file)
 % Reads data (camera frame data) from a Matlab file, rotates it to our
 % needs and subtracts the background. Additionally can correct for
 % bleaching.
@@ -25,7 +25,7 @@ if strcmp(format,'tif') || strcmp(format, 'tiff')
     end
 elseif strcmp(format, 'hdf5') || strcmp(format, 'h5')
 %%HDF5
-    images = hdf5read(camera_frames_file, 'data');
+    images = hdf5read(camera_frames_file, 'data'); 
 %Get cropping parameters from hdf5 file.
 %Note the Y-X mismatch that comes from how Tempesta saves the hdf5 file
 %(rotated, X0 and Y0 for Orcaflash is bottom left corner).

@@ -20,11 +20,13 @@ activation_size = 0.040;
 
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data');
 D = dir(LoadDataPathName);
-fileNames = {D([D.isdir] == 0).name};
+fileNames = {D([D.isdir] == 0)};  
+fileNames = fileNames{1};
+[~, file_indexes] = sort([fileNames.datenum]);
+
 
 input_camera_darkframe = 'Darkframe_defect_corr_ON.mat';
-input_camera_frames = strcat(LoadDataPathName, '\', fileNames{1});
-input_widefield_frames = strcat(LoadDataPathName, '\', fileNames{1});
+input_camera_frames = strcat(LoadDataPathName, '\', fileNames(file_indexes(1)).name);
 
 % Paramater set for type of acquisition
 answ_ulens = questdlg('Microlens data or widefield?', 'Microlenses?', 'Microlenses','Widefield', 'Microlenses');
@@ -54,7 +56,7 @@ switch answ_pat
                 [LoadPatternFileName,LoadPatternPathName] = uigetfile({'*.*'}, 'Load pattern file');
                 input_pattern_frames = strcat(LoadPatternPathName, LoadPatternFileName);
                 [data, pattern_images] = import_data_and_pattern_no_WF(input_camera_frames, input_camera_darkframe, input_pattern_frames);
-                pattern = switching_pattern_identification_manual_freq_and_phase(data, pattern_period / camera_pixel_length, pattern_images);                
+                pattern = switching_pattern_identification_manual(pattern_images, pattern_period / camera_pixel_length, pattern_images);                
             case 'Use raw data'
                 data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
                 pattern = switching_pattern_identification_manual(data, pattern_period / camera_pixel_length, []);                
@@ -86,8 +88,8 @@ fr_p_line = sqrt(size(data, 3));
 
 seq = adjusted;
 
-for i = 2:length(fileNames)
-    input_camera_frames = strcat(LoadDataPathName, '\', fileNames{i});
+for i = file_indexes(2:end)
+    input_camera_frames = strcat(LoadDataPathName, '\', fileNames(i).name);
     data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
     %Check that number of frames is correct
     if(round(number_scanning_steps) ~= number_scanning_steps)
