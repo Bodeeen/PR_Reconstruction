@@ -29,13 +29,18 @@ x0 = pattern(4);
 nnulls = size(B_cent,2);
 cmat_cent = zeros(nnulls,nframes);
 cmat_bg = zeros(nnulls,nframes);
+%Calculate weights to correct for different pinholes having
+%different "sum under gaussians"
+W_cent = 1./sum(B_cent, 1);
+W_bg = 1./sum(B_bg, 1);
+
 h = waitbar(0,'Pinholing...');
 for i = 1:nframes
     waitbar(i/nframes);
     frame = data(:,:,i);
     f = double(reshape(frame,[numel(frame), 1]));
-    cmat_cent(:,i) = B_cent'*f;
-    cmat_bg(:,i) = B_bg'*f;
+    cmat_cent(:,i) = W_cent*(B_cent'*f);
+    cmat_bg(:,i) = W_bg*(B_bg'*f);
     
 end
 close(h)

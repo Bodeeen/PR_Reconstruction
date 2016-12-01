@@ -6,6 +6,9 @@ function combine_camera_frames()
 %% file names
 % input_camera_frames = 'rawstack1_p.tif';
 % input_camera_darkframe = 'darkframe.tif';
+
+
+
 % output_filename = 'recontructed.tif';
 
 %% some physical parameters of the setup
