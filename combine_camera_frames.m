@@ -13,7 +13,7 @@ function combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-diff_limit = 0.250; %um
+diff_limit = 0.050; %um
 corr_bleach = 'proportional'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
@@ -185,10 +185,10 @@ function save_image(widefield, recon, bp_fac, LoadDataFileName, LoadDataPathName
         savepath = savepath_check;
         mkdir(savepath)
         output = recon - min(recon(:));
-        output = output/max(output(:));
+        output = uint16(2^16*output/max(output(:)));
         imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif'))
         widefield = widefield - min(widefield(:));
-        widefield = widefield/max(widefield(:));
+        widefield = uint16(2^16*widefield/max(widefield(:)));
         imwrite(widefield, strcat(savepath, '\', fname, '_WF', '.tif'))
 end
 

@@ -10,8 +10,8 @@ function [c_signals bg_signals] = combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-diff_limit = 0.250; %um
-corr_bleach = 'proportional'; % proportional, additive or no
+diff_limit = 0.100; %um
+corr_bleach = 'additive'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
     % total number of camera frames is (number_scanning_steps)^2
@@ -91,6 +91,14 @@ seq = adjusted;
 for i = file_indexes(2:end)
     input_camera_frames = strcat(LoadDataPathName, '\', fileNames(i).name);
     data = import_data_no_WF(input_camera_frames, input_camera_darkframe);
+    switch corr_bleach
+    case 'proportional'
+        data = bleaching_correction(data);
+    case 'additive'
+        data = bleaching_correction_STHLM(data);
+    case 'no'
+        a = 1
+end
     %Check that number of frames is correct
     if(round(number_scanning_steps) ~= number_scanning_steps)
         h = errordlg('Number of frames is super strange!', 'Huh!?')
