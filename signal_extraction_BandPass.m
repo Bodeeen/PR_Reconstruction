@@ -31,16 +31,18 @@ cmat_cent = zeros(nnulls,nframes);
 cmat_bg = zeros(nnulls,nframes);
 %Calculate weights to correct for different pinholes having
 %different "sum under gaussians"
-W_cent = 1./sum(B_cent, 1);
-W_bg = 1./sum(B_bg, 1);
+W_cent = 1./sum(B_cent, 1)';
+W_cent = W_cent ./ mean(W_cent);
+W_bg = 1./sum(B_bg, 1)';
+W_bg = W_bg ./ mean(W_bg);
 
 h = waitbar(0,'Pinholing...');
 for i = 1:nframes
     waitbar(i/nframes);
     frame = data(:,:,i);
     f = double(reshape(frame,[numel(frame), 1]));
-    cmat_cent(:,i) = W_cent*(B_cent'*f);
-    cmat_bg(:,i) = W_bg*(B_bg'*f);
+    cmat_cent(:,i) = W_cent.*(B_cent'*f);
+    cmat_bg(:,i) = W_bg.*(B_bg'*f);
     
 end
 close(h)
