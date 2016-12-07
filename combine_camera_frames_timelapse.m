@@ -82,7 +82,7 @@ recon_px_per_camera_px = recon_pixel_length / camera_pixel_length;
     % length of pixel of combined frames in camera pixels
 diff_lim_px = diff_limit / camera_pixel_length;
 
-[central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+[central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px);
 fr_p_line = sqrt(size(data, 3));
 [adjusted bg_sub pixels] = image_adjustment_ui(central_signal, bg_signal, fr_p_line);
 
@@ -104,7 +104,7 @@ end
         h = errordlg('Number of frames is super strange!', 'Huh!?')
         return
     end
-    [central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+    [central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px);
     adjusted = image_adjustment(central_signal, bg_signal, fr_p_line, pixels, bg_sub);
     seq(:,:,end+1) = adjusted;
 end

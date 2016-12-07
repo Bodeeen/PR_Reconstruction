@@ -13,7 +13,7 @@ function combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-diff_limit = 0.150; %um
+diff_limit = 0.400; %um
 corr_bleach = 'proportional'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
@@ -138,7 +138,7 @@ disp('Extracting signal...')
 %Show widefield image
 figure('name', 'Widefield')
 imshow(widefield,[])
-[central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px, recon_px_per_camera_px, shift_per_step, pinhole_um / camera_pixel_length, activation_size/camera_pixel_length);
+[central_signal bg_signal] = signal_extraction_BandPass(data, pattern, diff_lim_px);
 
 fr_p_line = sqrt(size(data, 3));
 [adjusted bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_line);

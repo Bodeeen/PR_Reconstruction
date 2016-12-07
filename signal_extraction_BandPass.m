@@ -1,4 +1,4 @@
-function [central_signal bg_signal] = signal_extraction(data, pattern, diff_lim_px, objp, shiftp, W, activation_size_px)
+function [central_signal bg_signal] = signal_extraction(data, pattern, diff_lim_px)
 % Given the pattern period and offset as well as the output pixel length
 % and the scanning pixel length it constructs the central and peripheral
 % signal frames as used in the publication: 'Nanoscopy with more than a
@@ -8,7 +8,7 @@ function [central_signal bg_signal] = signal_extraction(data, pattern, diff_lim_
 % pattern is the periods and offsets of the on-switched regions
 
 %% error checks
-assert(nargin == 7)
+assert(nargin == 3)
 
 %Presets
 
