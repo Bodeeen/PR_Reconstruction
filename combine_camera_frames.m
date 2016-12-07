@@ -13,7 +13,7 @@ function combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-diff_limit = 0.400; %um
+diff_limit = 0.150; %um
 corr_bleach = 'proportional'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.

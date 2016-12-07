@@ -55,7 +55,7 @@ f = figure
 imshow(cropped,[]);
 [pix_x_2 pix_y_2] = ginput(1);
 pix_x_2 = rect(1) + pix_x_2/scale;
-pix_y_3 =  rect(2) + pix_y_2/scale;
+pix_y_2 =  rect(2) + pix_y_2/scale;
 close(f)
 
 cycles_x = abs(pix_x_1 - pix_x_2)/expected_value;
