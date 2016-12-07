@@ -13,7 +13,7 @@ function combine_camera_frames()
 
 %% some physical parameters of the setup
 camera_pixel_length = 0.065;   % camera pixel length [µm] in sample space
-diff_limit = 0.050; %um
+diff_limit = 0.150; %um
 corr_bleach = 'proportional'; % proportional, additive or no
 % Calculation of number of scanning steps comes from the step size
 % calculation when creating the simulated data.
@@ -154,7 +154,7 @@ close(h)
 while ~strcmp(answ, 'Exit')
     switch answ
         case 'Save image'
-            save_image(widefield, adjusted, bg_sub, LoadDataFileName, LoadDataPathName);
+            save_image(widefield, adjusted, bg_sub, diff_limit, LoadDataFileName, LoadDataPathName);
             answ = questdlg('Action?', 'Action?', 'Change adjustments.','Exit', 'Change adjustments.');
         case 'Change adjustments.'
             [adjusted bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_line);
@@ -168,13 +168,13 @@ end
 
 end
 
-function save_image(widefield, recon, bp_fac, LoadDataFileName, LoadDataPathName)
+function save_image(widefield, recon, bp_fac, diff_limit, LoadDataFileName, LoadDataPathName)
         savename = strsplit(LoadDataFileName,'.');
         savename = savename{1};
         dname = uigetdir(LoadDataPathName);
         fname = inputdlg('Chose name', 'Name',1,{savename});
         fname = fname{1};
-        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_pin_%.2f_bg_sub_fac', bp_fac));
+        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', 1000*diff_limit, bp_fac));
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;
@@ -218,7 +218,7 @@ function [adjusted, bg_sub] = image_adjustment(central_signal, bg_signal, fr_p_l
     answ = 'Yes'
     h = figure
     while strcmp(answ, 'Yes')
-        parameters = inputdlg({'Background subtraction', 'Nr of pixels to shift?'}, 'Parameter', 1, {'0.7','3'})
+        parameters = inputdlg({'Background subtraction', 'Nr of pixels to shift?'}, 'Parameter', 1, {'0.7','0'})
         bg_sub = str2double(parameters{1});
         pixels = str2double(parameters{2});
         sr_signal = central_signal - bg_sub*bg_signal;
