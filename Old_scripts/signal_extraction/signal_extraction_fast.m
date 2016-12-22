@@ -19,10 +19,10 @@ nframes = size(data, 3);
 nsteps = sqrt(nframes);
 
 % decode the pattern
-fx = pattern(1);
-x0 = pattern(2);
-fy = pattern(3);
-y0 = pattern(4);
+fx = pattern(3);
+x0 = pattern(4);
+fy = pattern(1);
+y0 = pattern(2);
 
 %% object positions in image so that they are always in the scanned regions
 %NOTE: These depend on scanning directions
@@ -66,7 +66,7 @@ for ky = 0 : nsteps - 1
         % adjust positions for this frame
         
         % interpolation
-        est = interpn(frame, xi+shift_x, yi+shift_y, 'nearest');
+        est = double(interpn(frame, xi+shift_x, yi+shift_y, 'nearest'));
         wmax = circshift(weights, -round(shift_x/objp), 1);
         wmax = circshift(wmax, -round(shift_y/objp), 2);
         

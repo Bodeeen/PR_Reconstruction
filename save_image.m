@@ -8,7 +8,7 @@ function save_image(widefield, recon, bg_sub_fac, diff_limit, datafilepath)
         dname = uigetdir(LoadDataPathName);
         fname = inputdlg('Chose name', 'Name',1,{savename});
         fname = fname{1};
-        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', 1000*diff_limit, bg_sub_fac));
+        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', diff_limit, bg_sub_fac));
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;

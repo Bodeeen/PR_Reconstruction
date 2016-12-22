@@ -22,7 +22,7 @@ function varargout = Get_inputGUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 09-Dec-2016 11:26:00
+% Last Modified by GUIDE v2.5 22-Dec-2016 11:21:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -90,6 +90,8 @@ function pattern_panel_SelectionChangeFcn(hObject, eventdata)
         case 'radio_wf'
             handles.expected_period = str2double(handles.wf_period_edit.String);
     end
+    update_pattern_id_im(hObject, handles)
+    handles = guidata(hObject); %Get updated version of handles
     guidata(hObject, handles)
             
 function data_edit_Callback(hObject, eventdata, handles)
@@ -181,13 +183,17 @@ function Load_data_Callback(hObject, eventdata, handles)
 filepath = strcat(LoadPathName, LoadFileName);
 handles.data_edit.String = filepath;
 cropping_data = get_cropping_data(filepath);
+h = msgbox('This could be a minute. Patience...','Importing data','help');
+child = get(h,'Children');
+delete(child(3))
 raw_data = load_image_stack(filepath);
 corrected_raw_data = frame_correction(raw_data);
 handles.cropping_data = cropping_data;
 handles.raw_data = corrected_raw_data;
+update_pattern_id_im(hObject, handles)
+close(h)
+handles = guidata(hObject);%Get updated version of handles
 guidata(hObject, handles)
-
-
 
 
 % --- Executes on button press in Load_pattern.
@@ -201,9 +207,9 @@ handles.pattern_edit.String = filepath;
 pattern_data = load_image_stack(filepath);
 pattern_im = mean(pattern_data, 3);
 handles.pattern_im = pattern_im;
+update_pattern_id_im(hObject, handles)
+handles = guidata(hObject); %Get updated version of handles
 guidata(hObject, handles)
-axes(handles.pattern_axis);
-imshow(pattern_im, []);
 
 % --- Executes on button press in run_reconstruction.
 function run_reconstruction_Callback(hObject, eventdata, handles)
@@ -218,20 +224,22 @@ end
 diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pixel_size_edit.String);
 imsize = size(data)
 pattern = handles.pattern;
-new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'diff_lim_px', diff_limit_px)
-if ~isfield(handles, 'last_preset_inputs') || ~isequal(new_preset_inputs, handles.last_preset_inputs);
-    presets = make_presets(imsize, pattern, diff_limit_px);
+if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, diff_limit_px)
+    handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
-    presets = handles.presets;
+    camera_pixel = str2double(handles.pixel_size_edit.String);
+    objp = 20 / camera_pixel;
+    number_scanning_steps = sqrt(size(data,3)) - 1;
+    shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
+    [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, 50/camera_pixel); 
+    handles.central_signal = central_signal;
+    handles.bg_signal = bg_signal;
 end
-cmats = signal_extraction_BandPass(data, presets, diff_limit_px);
-handles.central_signal = cmat2image(cmats.cmat_cent, presets); 
-handles.bg_signal = cmat2image(cmats.cmat_bg, presets);
 update_recon_im(hObject, handles)
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
-handles = guidata(hObject); %Get updated version of handles
-handles.last_preset_inputs = new_preset_inputs;
-handles.presets = presets;
+handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
+
 guidata(hObject, handles);
 
 
@@ -240,14 +248,14 @@ function find_pattern_Callback(hObject, eventdata, handles)
 % hObject    handle to find_pattern (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-expected_period = handles.expected_period / str2double(handles.pixel_size_edit.String);
-cropped_pattern_im = crop_image(handles.pattern_im, handles.cropping_data);
-pattern = pattern_identification( cropped_pattern_im, expected_period )
+expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
+pattern_id_im = handles.pattern_id_im;
+pattern = pattern_identification( pattern_id_im, expected_period_px )
 handles.pattern = pattern;
-grid_vectors = make_pattern_grid(pattern, size(cropped_pattern_im));
+grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
 scale = 10;
 axes(handles.pattern_axis);
-imshow(imresize(cropped_pattern_im, scale), []);
+imshow(imresize(pattern_id_im, scale), []);
 hold on
 plot(scale*grid_vectors.x_vec, scale*grid_vectors.y_vec, 'x')
 hold off
@@ -406,7 +414,9 @@ function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     handles.recon_im = handles.central_signal - handles.bg_sub_slider.Value*handles.bg_signal;
-    imshow(handles.recon_im, []);
+    l_lim = handles.low_lim_slider.Value * max(handles.recon_im(:)) + (1 - handles.low_lim_slider.Value) * min(handles.recon_im(:))
+    u_lim = handles.up_lim_slider.Value * max(handles.recon_im(:))  + (1 - handles.up_lim_slider.Value) * min(handles.recon_im(:))
+    imshow(handles.recon_im, [min(l_lim, u_lim) max(l_lim, u_lim)]);
     guidata(hObject, handles);
 end
 
@@ -452,3 +462,89 @@ bg_sub_fac = handles.bg_sub_slider.Value;
 filepath = handles.data_edit.String;
 diff_lim = str2double(handles.diff_lim_edit.String);
 save_image(handles.wf_im, handles.recon_im, bg_sub_fac, diff_lim, filepath);
+
+
+% --- Executes on selection change in WF_recon_mode.
+function WF_recon_mode_Callback(hObject, eventdata, handles)
+% hObject    handle to WF_recon_mode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns WF_recon_mode contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from WF_recon_mode
+
+
+% --- Executes during object creation, after setting all properties.
+function WF_recon_mode_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to WF_recon_mode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function update_pattern_id_im(hObject, handles)
+% hObject    handle to WF_recon_mode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if handles.radio_ulens.Value == 1 && isfield(handles, 'raw_data')
+    handles.pattern_id_im = sum(handles.raw_data, 3);
+    axes(handles.pattern_axis);
+    imshow(handles.pattern_id_im, []);
+elseif handles.radio_wf.Value == 1 && isfield(handles, 'pattern_im') && isfield(handles, 'raw_data')
+    handles.pattern_id_im = crop_image(handles.pattern_im, handles.cropping_data);
+    axes(handles.pattern_axis);
+    imshow(handles.pattern_id_im, []);
+end
+guidata(hObject, handles);
+
+
+
+% --- Executes on slider movement.
+function low_lim_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to low_lim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+update_recon_im(hObject, handles)
+
+% --- Executes during object creation, after setting all properties.
+function low_lim_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to low_lim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function up_lim_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to up_lim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+update_recon_im(hObject, handles)
+
+% --- Executes during object creation, after setting all properties.
+function up_lim_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to up_lim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
