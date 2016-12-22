@@ -6,5 +6,6 @@
 *.avi
 *.asv
 *.fig
+!GUI.fig
 *.hdf5
 *.h5
