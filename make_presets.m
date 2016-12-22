@@ -45,8 +45,8 @@ for x = 1:size_x
     waitbar(x/size_x)
     for y = 1:size_y
         d = dnull(y,x);
-        g_cent = 1/sqrt(2*sigma_cent^2*pi)*exp(-d^2/(2*sigma_cent^2));
-        g_bg = 1/sqrt(2*sigma_bg^2*pi)*exp(-d^2/(2*sigma_bg^2));
+        g_cent = exp(-d^2/(2*sigma_cent^2));
+        g_bg = exp(-d^2/(2*sigma_bg^2));
         %Nulls are ordered first vertically down then horizontally
         null = (nx(y,x)-1)*nulls_y + ny(y,x);
         pixel = (x-1)*size_y+y;
