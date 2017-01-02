@@ -1,15 +1,12 @@
 function tot_corr_im = chessboard_correction_add( im, square_side )
 
-[up_lines, down_lines, right_lines, left_lines] = make_border_matrices(im, square_side);
+[up_lines, ~, right_lines, left_lines] = make_border_matrices(im, square_side);
 
 % Find number of coefficients in each dimension
 cx = size(up_lines, 2);
 cy = size(right_lines, 1);
 
-calib_im = ones(cy,cx);
-
 LtRcorr_factors_x = zeros(cy,cx);
-RtLcorr_factors_x = zeros(cy,cx);
 
 for y = 1:cy
     for x = 2:cx;
@@ -17,35 +14,7 @@ for y = 1:cy
     end
 end
 
-for y = cy:-1:1
-    for x = cx-1:-1:1;
-        RtLcorr_factors_x(y,x) = (RtLcorr_factors_x(y,x+1)+left_lines(y,x+1)) - right_lines(y,x);
-    end
-end
-
-corr_factors_x = ones(cy,cx);
-
-for y = 1:cy
-    for x = 1:cx
-        corr_factors_x(y,x) = (cx-x)/cx * LtRcorr_factors_x(y,x) + x/cx * RtLcorr_factors_x(y,x);
-    end
-end
-
-resize_fac = size(im)./size(LtRcorr_factors_x);
-assert(resize_fac(1) == resize_fac(2), 'Something strange here')
-resize_fac = resize_fac(1);
-
-corr_im_x = imresize(corr_factors_x, resize_fac, 'nearest');
-corr_im_x_RtL = imresize(RtLcorr_factors_x, resize_fac, 'nearest');
-corr_im_x_LtR = imresize(LtRcorr_factors_x, resize_fac, 'nearest');
-weight_im = imresize(LtRcorr_factors_x, resize_fac, 'bicubic');
-
-x_corr_im = corr_im_x .* double(im);
-x_corr_RtL = corr_im_x_RtL .* double(im);
-
-x_corr_up = up_lines + LtRcorr_factors_x;
-x_corr_down = down_lines + LtRcorr_factors_x;
-corr_x_calib_im = LtRcorr_factors_x;
+corr_im_x_LtR = imresize(LtRcorr_factors_x, square_side, 'nearest');
 
 im_x = size(im,2);
 im_y = size(im,1);
@@ -53,9 +22,9 @@ im_y = size(im,1);
 dx = (cx-1)/(im_x-1)
 xi = repmat(1:dx:cx, [cy 1]);
 y = 1:cy;
-yi = repmat(y', [1 cx*resize_fac]);
+yi = repmat(y', [1 cx*square_side]);
 
-corr = interpn(corr_x_calib_im, yi, xi, 'bicubic');
+corr = interpn(LtRcorr_factors_x, yi, xi, 'bicubic');
 
 corr_im = zeros(im_y, im_x);
 
@@ -64,17 +33,45 @@ for y = 1:im_y
     corr_im(y,:) = corr(yi,:);
 end
 
-final_corr = corr_im_x_LtR - corr_im;
+final_correction_x = corr_im_x_LtR - corr_im;
+final_corrected_x = double(im) + final_correction_x;
 
-tot_corr_im = double(im) + final_corr;
+up_lines = final_corrected_x(1:square_side:end, :);
+down_lines = final_corrected_x(square_side:square_side:end, :);
 
-figure
-subplot(1,2,1)
-imshow(im,[])
-title('Uncorrected')
-subplot(1,2,2)
-imshow(tot_corr_im,[])
-title('Corrected')
+UtDcorr_factors = zeros(cy, im_x);
+for x = 1:im_x
+    for y = 2:cy;
+        UtDcorr_factors(y,x) = (UtDcorr_factors(y-1,x)+down_lines(y-1,x)) - up_lines(y,x);
+    end
+end
+
+UtDcorr_im = zeros(im_y, im_x);
+
+for x = 1:im_x
+    for y = 1:im_y
+        yi = ceil(y/square_side);
+        UtDcorr_im(y,x) = UtDcorr_factors(yi,x);
+    end
+end
+
+kern_x = oneDGausskern(50, 25);
+kern_x = kern_x/sum(kern_x(:));
+kern_y = kern_x';
+filtered_y = conv2(UtDcorr_im, kern_y, 'same');
+
+corr_im_y = UtDcorr_im - filtered_y;
+filtered_corr_im_y = conv2(corr_im_y, kern_x, 'same');
+
+tot_corr_im = final_corrected_x + filtered_corr_im_y;
+
+% figure
+% subplot(1,2,1)
+% imshow(im,[])
+% title('Uncorrected')
+% subplot(1,2,2)
+% imshow(tot_corr_im,[])
+% title('Corrected')
 end
 
 

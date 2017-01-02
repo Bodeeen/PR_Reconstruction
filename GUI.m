@@ -22,7 +22,7 @@ function varargout = Get_inputGUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 22-Dec-2016 11:21:45
+% Last Modified by GUIDE v2.5 22-Dec-2016 16:16:03
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -217,6 +217,7 @@ function run_reconstruction_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 data = handles.raw_data;
+handles.nframes = size(data, 3);
 if handles.bleach_corr_check.Value
     mode = handles.bleach_corr_dropdown.String{handles.bleach_corr_dropdown.Value};
     data = bleaching_correction(data, mode);
@@ -237,6 +238,7 @@ else
     handles.bg_signal = bg_signal;
 end
 update_recon_im(hObject, handles)
+update_recon_axis(hObject, handles)
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
 
@@ -366,8 +368,10 @@ sliderValue = get(handles.bg_sub_slider,'Value')
 set(handles.bg_sub_edit,'String', num2str(sliderValue))
 diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pixel_size_edit.String);
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
+handles = guidata(hObject);
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
+update_recon_axis(hObject, handles);
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -396,6 +400,8 @@ diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pi
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
+update_recon_axis(hObject, handles);
+handles = guidata(hObject);
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -414,13 +420,18 @@ function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     handles.recon_im = handles.central_signal - handles.bg_sub_slider.Value*handles.bg_signal;
-    l_lim = handles.low_lim_slider.Value * max(handles.recon_im(:)) + (1 - handles.low_lim_slider.Value) * min(handles.recon_im(:))
-    u_lim = handles.up_lim_slider.Value * max(handles.recon_im(:))  + (1 - handles.up_lim_slider.Value) * min(handles.recon_im(:))
-    imshow(handles.recon_im, [min(l_lim, u_lim) max(l_lim, u_lim)]);
     guidata(hObject, handles);
 end
 
-
+function update_recon_axis(hObject, handles)
+if isfield(handles, 'recon_im')
+    im = handles.recon_im;
+    l_lim = handles.low_lim_slider.Value * max(handles.recon_im(:)) + (1 - handles.low_lim_slider.Value) * min(handles.recon_im(:));
+    u_lim = handles.up_lim_slider.Value * max(handles.recon_im(:))  + (1 - handles.up_lim_slider.Value) * min(handles.recon_im(:));
+    axes(handles.recon_axis);
+    imshow(im, [min(l_lim, u_lim) max(l_lim, u_lim)]);
+end
+    
 % --- Executes on button press in bleach_corr_check.
 function bleach_corr_check_Callback(hObject, eventdata, handles)
 % hObject    handle to bleach_corr_check (see GCBO)
@@ -514,7 +525,7 @@ function low_lim_slider_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-update_recon_im(hObject, handles)
+update_recon_axis(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function low_lim_slider_CreateFcn(hObject, eventdata, handles)
@@ -536,7 +547,7 @@ function up_lim_slider_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-update_recon_im(hObject, handles)
+update_recon_axis(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function up_lim_slider_CreateFcn(hObject, eventdata, handles)
@@ -548,3 +559,16 @@ function up_lim_slider_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
+
+
+% --- Executes on button press in chessb_corr_but.
+function chessb_corr_but_Callback(hObject, eventdata, handles)
+% hObject    handle to chessb_corr_but (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+im = handles.recon_im;
+square_side = sqrt(handles.nframes);
+corrected = chessboard_correction_add(im, square_side);
+handles.recon_im = corrected;
+update_recon_axis(hObject, handles)
+guidata(hObject, handles);
