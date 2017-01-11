@@ -22,7 +22,7 @@ function varargout = Get_inputGUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 22-Dec-2016 16:16:03
+% Last Modified by GUIDE v2.5 11-Jan-2017 12:25:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -222,7 +222,7 @@ if handles.bleach_corr_check.Value
     mode = handles.bleach_corr_dropdown.String{handles.bleach_corr_dropdown.Value};
     data = bleaching_correction(data, mode);
 end
-diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pixel_size_edit.String);
+diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
 imsize = size(data)
 pattern = handles.pattern;
 if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
@@ -233,7 +233,13 @@ else
     objp = 20 / camera_pixel;
     number_scanning_steps = sqrt(size(data,3)) - 1;
     shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
-    [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, 50/camera_pixel); 
+    pinhole_size = str2double(handles.pinhole_edit.String);
+    recon_gauss = str2double(handles.ReconGaussSize.String);
+    if pinhole_size == recon_gauss
+        [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
+    else
+        [central_signal bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
+    end
     handles.central_signal = central_signal;
     handles.bg_signal = bg_signal;
 end
@@ -334,18 +340,18 @@ end
 
 
 
-function diff_lim_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to diff_lim_edit (see GCBO)
+function pinhole_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to pinhole_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of diff_lim_edit as text
-%        str2double(get(hObject,'String')) returns contents of diff_lim_edit as a double
+% Hints: get(hObject,'String') returns contents of pinhole_edit as text
+%        str2double(get(hObject,'String')) returns contents of pinhole_edit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function diff_lim_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to diff_lim_edit (see GCBO)
+function pinhole_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pinhole_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -366,7 +372,7 @@ function bg_sub_slider_Callback(hObject, eventdata, handles)
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 sliderValue = get(handles.bg_sub_slider,'Value')
 set(handles.bg_sub_edit,'String', num2str(sliderValue))
-diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pixel_size_edit.String);
+diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
 handles = guidata(hObject);
 update_recon_im(hObject, handles);
@@ -396,7 +402,7 @@ function bg_sub_edit_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of bg_sub_edit as a double
 editValue = get(handles.bg_sub_edit,'String')
 set(handles.bg_sub_slider,'Value', str2double(editValue))
-diff_limit_px = str2double(handles.diff_lim_edit.String) / str2double(handles.pixel_size_edit.String);
+diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
 UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
@@ -471,7 +477,7 @@ function save_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 bg_sub_fac = handles.bg_sub_slider.Value;
 filepath = handles.data_edit.String;
-diff_lim = str2double(handles.diff_lim_edit.String);
+diff_lim = str2double(handles.pinhole_edit.String);
 save_image(handles.wf_im, handles.recon_im, bg_sub_fac, diff_lim, filepath);
 
 
@@ -572,3 +578,28 @@ corrected = chessboard_correction_add(im, square_side);
 handles.recon_im = corrected;
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
+
+
+
+
+function ReconGaussSize_Callback(hObject, eventdata, handles)
+% hObject    handle to ReconGaussSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of ReconGaussSize as text
+%        str2double(get(hObject,'String')) returns contents of ReconGaussSize as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function ReconGaussSize_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ReconGaussSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+

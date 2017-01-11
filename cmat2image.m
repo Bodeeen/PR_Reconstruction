@@ -1,11 +1,24 @@
 function reconstructed = cmat2image(cmat, presets)
-
+% Create the reconstructed image from the matrix cmat, each line in cmat
+% contains the signal values over time for a specific focal point.
     nulls_x = presets.nulls_x;
     nulls_y = presets.nulls_y;
 
     fr_p_line = sqrt(size(cmat, 2));
     nnulls = nulls_y*nulls_x;
     subsquares = zeros(fr_p_line, fr_p_line, nnulls);
+    
+    %% Attempt to estimate pixel to pixel (step to step) noise in each point
+
+%     Pxx = pwelch(cmat');
+%     Pxx_high = sum(Pxx(end-3:end,:),1);
+%     Pim = reshape(Pxx_high', [nulls_y nulls_x]);
+%     
+%     kern = [-1 2 -1];
+%     noise = conv2(cmat, kern, 'valid');
+%     sum_noise = sum(abs(noise), 2);
+%     noise_im = reshape(sum_noise, [nulls_y nulls_x]);
+    
     for i = 1:nnulls
         subsquare = reshape(cmat(i,:), fr_p_line, fr_p_line);
         subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));

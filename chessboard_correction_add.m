@@ -25,12 +25,26 @@ y = 1:cy;
 yi = repmat(y', [1 cx*square_side]);
 
 corr = interpn(LtRcorr_factors_x, yi, xi, 'bicubic');
+k_size = 500;
+k_fwhm = 50;
+kern = ones(1, k_size); %oneDGausskern( k_size, k_fwhm);
+kern = kern ./ sum(kern(:));
+
+corr_filt = conv2(corr, kern, 'same');
+
+q = ceil(k_size/2);
+p = (im_x - q)
+for y = 1:cy
+    for x = p:im_x
+        corr_filt(y,x) = mean(corr(y,x-q:im_x));
+    end
+end
 
 corr_im = zeros(im_y, im_x);
 
 for y = 1:im_y
     yi = ceil(y/square_side);
-    corr_im(y,:) = corr(yi,:);
+    corr_im(y,:) = corr_filt(yi,:);
 end
 
 final_correction_x = corr_im_x_LtR - corr_im;
@@ -55,10 +69,21 @@ for x = 1:im_x
     end
 end
 
-kern_x = oneDGausskern(50, 25);
+k_size = square_side;
+
+kern_x = ones(1,k_size);
 kern_x = kern_x/sum(kern_x(:));
 kern_y = kern_x';
 filtered_y = conv2(UtDcorr_im, kern_y, 'same');
+
+q = ceil(k_size/2);
+p = (im_y - q);
+for x = 1:im_x
+    for y = p:im_y
+        filtered_y(y,x) = mean(UtDcorr_im(y-q:im_y,x));
+    end
+end
+
 
 corr_im_y = UtDcorr_im - filtered_y;
 filtered_corr_im_y = conv2(corr_im_y, kern_x, 'same');

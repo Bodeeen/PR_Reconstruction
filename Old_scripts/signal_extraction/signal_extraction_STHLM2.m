@@ -19,10 +19,10 @@ nframes = size(data, 3);
 nsteps = sqrt(nframes);
 
 % decode the pattern
-fx = pattern(1);
-x0 = pattern(2);
-fy = pattern(3);
-y0 = pattern(4);
+fx = pattern(3);
+x0 = pattern(4);
+fy = pattern(1);
+y0 = pattern(2);
 
 %% object positions in image so that they are always in the scanned regions
 %NOTE: These depend on scanning directions
@@ -48,7 +48,7 @@ weights = exp(-(t2max.^2/c));
 
 % Compute pixel correlation between raw and shrunken activation spots
 act_scale = W/A;
-[act_corr_x act_corr_y act_corr_weights] = make_act_corr_grid(dx_up, dy_up, fx_up, x0_up, fy_up, y0_up, act_scale);
+[act_corr_x act_corr_y use_x use_y act_corr_weights] = make_act_corr_grid(dx_up, dy_up, fx_up, x0_up, fy_up, y0_up, act_scale);
 %% central loop: interpolate camera frame on shifting grids (scanning)
 % and extract central and peripheral signals
 central_signal = 0;
@@ -78,7 +78,7 @@ for ky = 0 : nsteps - 1
         % adjust positions for this frame
         
         % interpolation
-        est = interpn(frame, xi+shift_x, yi+shift_y, 'nearest');
+        est = double(interpn(frame, xi+shift_x, yi+shift_y, 'nearest'));
         wmax = circshift(weights, -round(shift_x/objp), 1);
         wmax = circshift(wmax, -round(shift_y/objp), 2);
         
@@ -96,7 +96,9 @@ for ky = 0 : nsteps - 1
             for x = 1:dx_up
                 act_x = act_corr_x(x);
                 act_y = act_corr_y(y);
-                central_signal_shrunk(act_y, act_x) = central_signal_shrunk(act_y, act_x) + central_signal(y,x);
+                if use_x(x) && use_y(y) > 0
+                    central_signal_shrunk(act_y, act_x) = central_signal_shrunk(act_y, act_x) + central_signal(y,x);
+                end
             end
         end
 %         imshow(central_signal,[])
@@ -174,26 +176,30 @@ end
 
 %%NOTE x and y interchanged from Göttingen code
 
-function [AC_x AC_y weights] = make_act_corr_grid(size_x, size_y, fy, y0, fx, x0, act_scale)
+function [AC_x AC_y use_x use_y weights] = make_act_corr_grid(size_x, size_y, fy, y0, fx, x0, act_scale)
 x = 1:size_x;
 y = 1:size_y;
 
-txmax = mod(x - x0, fx);
-h = txmax > fx / 2;
-txmax(h) = txmax(h) - fx;
+txmax = mod(x - x0, fx); 
+h = txmax > fx / 2; 
+txmax(h) = txmax(h) - fx; % txmax is location of x with respect to nearest null
 AC_x = round(x - txmax*(1-1/act_scale));
+use_x = ((AC_x > 0) & (AC_x <= size_x)); % Mark which AC_x are inside the image
 
 tymax = mod(y - y0, fy);
 h = tymax > fy / 2;
 tymax(h) = tymax(h) - fy;
 AC_y = round(y - tymax*(1-1/act_scale));
+use_y = ((AC_y > 0) & (AC_y <= size_y));
 
 weights = zeros(size_y, size_x);
 for x = 1:size_x
     for y = 1:size_y
         act_x = AC_x(x);
         act_y = AC_y(y);
-        weights(act_y,act_x) = weights(act_y,act_x) + 1;
+        if use_x(x) && use_y(y)
+            weights(act_y,act_x) = weights(act_y,act_x) + 1;
+        end
     end
 end
 
