@@ -9,5 +9,7 @@ else
     output_stack = corr_stack;
 end
 
+output_stack = output_stack - 98; %Remove camera offset
+
 end
 

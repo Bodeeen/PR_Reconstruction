@@ -8,6 +8,11 @@ else
     presets = handles.presets;
 end
 cmats = signal_extraction_BandPass(data, presets, diff_limit_px);
+
+if handles.bleach_corr_check.Value
+    cmats = cmats_bleach_corr(cmats);
+end
+
 handles.central_signal = cmat2image(cmats.cmat_cent, presets); 
 handles.bg_signal = cmat2image(cmats.cmat_bg, presets);
 

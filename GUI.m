@@ -183,7 +183,7 @@ function Load_data_Callback(hObject, eventdata, handles)
 filepath = strcat(LoadPathName, LoadFileName);
 handles.data_edit.String = filepath;
 cropping_data = get_cropping_data(filepath);
-h = msgbox('This could be a minute. Patience...','Importing data','help');
+h = msgbox('This could be a second. Patience...','Importing data','help');
 child = get(h,'Children');
 delete(child(3))
 raw_data = load_image_stack(filepath);
@@ -218,10 +218,7 @@ function run_reconstruction_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 data = handles.raw_data;
 handles.nframes = size(data, 3);
-if handles.bleach_corr_check.Value
-    mode = handles.bleach_corr_dropdown.String{handles.bleach_corr_dropdown.Value};
-    data = bleaching_correction(data, mode);
-end
+
 diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
 imsize = size(data)
 pattern = handles.pattern;
@@ -229,6 +226,9 @@ if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     microlens_recon_alg(hObject, handles, data, imsize, pattern, diff_limit_px)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
+    if handles.bleach_corr_check.Value
+        data = bleaching_correction(data, mode);
+    end
     camera_pixel = str2double(handles.pixel_size_edit.String);
     objp = 20 / camera_pixel;
     number_scanning_steps = sqrt(size(data,3)) - 1;
