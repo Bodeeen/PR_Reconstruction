@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 11-Jan-2017 12:25:43
+% Last Modified by GUIDE v2.5 10-Feb-2017 13:12:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -475,10 +475,11 @@ function save_button_Callback(hObject, eventdata, handles)
 % hObject    handle to save_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-bg_sub_fac = handles.bg_sub_slider.Value;
 filepath = handles.data_edit.String;
+
+bg_sub_fac = handles.bg_sub_slider.Value;
 diff_lim = str2double(handles.pinhole_edit.String);
-save_image(handles.wf_im, handles.recon_im, bg_sub_fac, diff_lim, filepath);
+save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif', 'widefield', handles.wf_im);
 
 
 % --- Executes on selection change in WF_recon_mode.
@@ -603,3 +604,60 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+
+% --- Executes on button press in Multi_frame_recon.
+function Multi_frame_recon_Callback(hObject, eventdata, handles)
+% hObject    handle to Multi_frame_recon (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
+D = dir(LoadDataPathName);
+fileNames = {D([D.isdir] == 0)};  
+fileNames = fileNames{1};
+[~, file_indexes] = sort([fileNames.datenum]);
+
+diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+pattern = handles.pattern;
+frames = length(file_indexes)-1
+frame = 0
+bg_sub = handles.bg_sub_slider.Value;
+for i = file_indexes(2:end)
+    frame = frame + 1;
+    filepath = strcat(LoadDataPathName, '\', fileNames(i).name);
+    raw_data = load_image_stack(filepath);
+    corrected_raw_data = frame_correction(raw_data);
+    imsize = size(corrected_raw_data);
+    if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, diff_limit_px)
+        handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
+    else
+        if handles.bleach_corr_check.Value
+            data = bleaching_correction(data, mode);
+        end
+        camera_pixel = str2double(handles.pixel_size_edit.String);
+        objp = 20 / camera_pixel;
+        number_scanning_steps = sqrt(size(data,3)) - 1;
+        shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
+        pinhole_size = str2double(handles.pinhole_edit.String);
+        recon_gauss = str2double(handles.ReconGaussSize.String);
+        if pinhole_size == recon_gauss
+            [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
+        else
+            [central_signal bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
+        end
+        handles.central_signal = central_signal;
+        handles.bg_signal = bg_signal;
+    end
+    recon = handles.central_signal - bg_sub*handles.bg_signal;
+    if frame == 1
+        stack = recon;
+    else
+        stack = cat(3, stack, recon);
+    end
+end
+diff_lim = str2double(handles.pinhole_edit.String);
+save_image(stack, bg_sub, diff_lim, filepath, 'hdf5')
+handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
+
+guidata(hObject, handles);

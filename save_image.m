@@ -1,28 +1,44 @@
-function save_image(widefield, recon, bg_sub_fac, diff_limit, datafilepath)
+function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargin)
+        vargs = varargin;
+        nargs = length(vargs)/2;
+        names = vargs(1:2:2*nargs);
+        values = vargs(2:2:2*nargs);
         
         split = strsplit(datafilepath, '\');
-        LoadDataFileName = split{end}
+        LoadDataFileName = split{end};
         LoadDataPathName = strjoin(split(1:end-1), '\');
         savename = strsplit(LoadDataFileName,'.');
         savename = savename{1};
         dname = uigetdir(LoadDataPathName);
-        fname = inputdlg('Chose name', 'Name',1,{savename});
-        fname = fname{1};
+        fname = 'Stack_recon'
         savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', diff_limit, bg_sub_fac));
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;
         while exist(savepath_check) == 7
-            savepath_check = strcat(savepath, '_', num2str(new_ver))
+            savepath_check = strcat(savepath, '_', num2str(new_ver));
             new_ver = new_ver + 1;
         end
         savepath = savepath_check;
         mkdir(savepath)
-        output = recon - min(recon(:));
-        output = uint16(2^16*output/max(output(:)));
-        imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif'))
-        widefield = widefield - min(widefield(:));
-        widefield = uint16(2^16*widefield/max(widefield(:)));
-        imwrite(widefield, strcat(savepath, '\', fname, '_WF', '.tif'))
+        
+        imsidey = size(recon, 1);
+        imsidex = size(recon, 2);
+        imsidez = size(recon, 3);
+%         output = recon - min(recon(:));
+%         output = uint16(2^16*output/max(output(:)));
+        output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data
+        if strcmp(format,'tif')
+            imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif')),
+        elseif strcmp(format,'hdf5')
+            h5create(strcat(savepath, '\', fname, '_Stack'),'/data', [imsidey imsidex imsidez])
+            h5write(strcat(savepath, '\', fname, '_Stack'),'/data', recon);
+        end
+        if nargs == 1
+            widefield = values{1};
+            widefield = widefield - min(widefield(:));
+            widefield = uint16(2^16*widefield/max(widefield(:)));
+            imwrite(widefield, strcat(savepath, '\', fname, '_WF', '.tif'))
+        end
 end
 
