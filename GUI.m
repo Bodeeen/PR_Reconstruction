@@ -479,8 +479,11 @@ filepath = handles.data_edit.String;
 
 bg_sub_fac = handles.bg_sub_slider.Value;
 diff_lim = str2double(handles.pinhole_edit.String);
-save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif', 'widefield', handles.wf_im);
-
+if isfield(handles, 'wf_im')
+    save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif', 'widefield', handles.wf_im);
+else
+    save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif');
+end
 
 % --- Executes on selection change in WF_recon_mode.
 function WF_recon_mode_Callback(hObject, eventdata, handles)
