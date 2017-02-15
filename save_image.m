@@ -10,7 +10,7 @@ function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargi
         savename = strsplit(LoadDataFileName,'.');
         savename = savename{1};
         dname = uigetdir(LoadDataPathName);
-        fname = 'Stack_recon'
+        fname = savename
         savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', diff_limit, bg_sub_fac));
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
