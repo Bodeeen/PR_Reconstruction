@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 10-Feb-2017 13:12:35
+% Last Modified by GUIDE v2.5 24-Feb-2017 12:15:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -211,12 +211,39 @@ update_pattern_id_im(hObject, handles)
 handles = guidata(hObject); %Get updated version of handles
 guidata(hObject, handles)
 
+% --- Executes on button press in Load_HPCmap.
+function Load_HPCmap_Callback(hObject, eventdata, handles)
+% hObject    handle to Load_HPCmap (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
+filepath = strcat(LoadPathName, LoadFileName);
+handles.HPCedit.String = filepath;
+HPC_im = load_image(filepath);
+handles.HPC_im = HPC_im;
+% handles = guidata(hObject); %Get updated version of handles
+guidata(hObject, handles)
+
+% --- Executes on button press in HPCcorrbox.
+function HPCcorrbox_Callback(hObject, eventdata, handles)
+% hObject    handle to HPCcorrbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of HPCcorrbox
+update_pattern_id_im(hObject, handles)
+handles = guidata(hObject); %Get updated version of handles
+guidata(hObject, handles)
+
 % --- Executes on button press in run_reconstruction.
 function run_reconstruction_Callback(hObject, eventdata, handles)
 % hObject    handle to run_reconstruction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 data = handles.raw_data;
+if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
+    data = HP_correct(data, handles.HPC_im);
+end
 handles.nframes = size(data, 3);
 
 diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
@@ -515,9 +542,13 @@ function update_pattern_id_im(hObject, handles)
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if handles.radio_ulens.Value == 1 && isfield(handles, 'raw_data')
-    handles.pattern_id_im = sum(handles.raw_data, 3);
+    handles.pattern_id_im = mean(handles.raw_data, 3);
+    if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
+        handles.pattern_id_im = handles.pattern_id_im - handles.HPC_im;
+    end
     axes(handles.pattern_axis);
     imshow(handles.pattern_id_im, []);
+   
 elseif handles.radio_wf.Value == 1 && isfield(handles, 'pattern_im') && isfield(handles, 'raw_data')
     handles.pattern_id_im = crop_image(handles.pattern_im, handles.cropping_data);
     axes(handles.pattern_axis);
@@ -664,3 +695,28 @@ save_image(stack, bg_sub, diff_lim, filepath, 'hdf5')
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
 
 guidata(hObject, handles);
+
+
+
+function HPCedit_Callback(hObject, eventdata, handles)
+% hObject    handle to HPCedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of HPCedit as text
+%        str2double(get(hObject,'String')) returns contents of HPCedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function HPCedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to HPCedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
