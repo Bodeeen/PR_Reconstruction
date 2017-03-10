@@ -27,7 +27,17 @@ function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargi
         imsidez = size(recon, 3);
 %         output = recon - min(recon(:));
 %         output = uint16(2^16*output/max(output(:)));
-        output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data
+
+%% Scale values appropriatly
+        if max(recon(:)) < 2^16/500
+            output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data
+        elseif max(recon(:)) < 2^16/50
+            output = uint16(50*recon);
+        elseif max(recon(:)) < 2^16/5
+            output = uint16(5*recon);
+        end
+        
+        
         if strcmp(format,'tif')
             imwrite(output, strcat(savepath, '\', fname, '_Reconstructed_Sthlm', '.tif')),
         elseif strcmp(format,'hdf5')

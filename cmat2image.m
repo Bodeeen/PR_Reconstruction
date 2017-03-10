@@ -41,9 +41,9 @@ function reconstructed = cmat2image(cmat, presets)
     end
     %%Handle the sometimes not representable frame values
     %Make image w/o the frame
-    wo_frame = reconstructed(1+fr_p_line:end-fr_p_line, 1+fr_p_line:end-fr_p_line);
-    minvalue = min(wo_frame(:));
-    maxvalue = max(wo_frame(:));
-
-    reconstructed = wo_frame;
+%     wo_frame = reconstructed(1+fr_p_line:end-fr_p_line, 1+fr_p_line:end-fr_p_line);
+%     minvalue = min(wo_frame(:));
+%     maxvalue = max(wo_frame(:));
+% 
+%     reconstructed = wo_frame;
 end

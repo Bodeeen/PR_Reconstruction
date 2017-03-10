@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 24-Feb-2017 12:15:45
+% Last Modified by GUIDE v2.5 09-Mar-2017 19:04:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -285,7 +285,7 @@ function find_pattern_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
 pattern_id_im = handles.pattern_id_im;
-pattern = pattern_identification( pattern_id_im, expected_period_px )
+pattern = AutoPatID( pattern_id_im, expected_period_px )
 handles.pattern = pattern;
 grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
 scale = 10;
@@ -453,6 +453,7 @@ function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     handles.recon_im = handles.central_signal - handles.bg_sub_slider.Value*handles.bg_signal;
+    handles.recon_uncorr = handles.recon_im;
     guidata(hObject, handles);
 end
 
@@ -544,7 +545,7 @@ function update_pattern_id_im(hObject, handles)
 if handles.radio_ulens.Value == 1 && isfield(handles, 'raw_data')
     handles.pattern_id_im = mean(handles.raw_data, 3);
     if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
-        handles.pattern_id_im = handles.pattern_id_im - handles.HPC_im;
+        handles.pattern_id_im = handles.pattern_id_im - double(handles.HPC_im);
     end
     axes(handles.pattern_axis);
     imshow(handles.pattern_id_im, []);
@@ -720,3 +721,72 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+
+
+
+function skew_nm_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to skew_nm_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of skew_nm_edit as text
+%        str2double(get(hObject,'String')) returns contents of skew_nm_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function skew_nm_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to skew_nm_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function line_nm_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to line_nm_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of line_nm_edit as text
+%        str2double(get(hObject,'String')) returns contents of line_nm_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function line_nm_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to line_nm_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in skew_stripe_corr.
+function skew_stripe_corr_Callback(hObject, eventdata, handles)
+% hObject    handle to skew_stripe_corr (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+skew_nm = str2double(handles.skew_nm_edit.String)/str2double(handles.pixel_size_edit.String);
+line_nm = str2double(handles.line_nm_edit.String)/str2double(handles.pixel_size_edit.String);
+cols_p_square = sqrt(handles.nframes);
+handles.recon_im = Skew_stripe_corr(skew_nm, line_nm, handles.recon_im, cols_p_square);
+update_recon_axis(hObject, handles)
+guidata(hObject, handles);
+
+
+% --- Executes on button press in reset_corr_btn.
+function reset_corr_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to reset_corr_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.recon_im = handles.recon_uncorr;
+update_recon_axis(hObject, handles)
+guidata(hObject, handles);

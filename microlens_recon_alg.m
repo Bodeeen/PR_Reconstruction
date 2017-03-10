@@ -13,8 +13,11 @@ if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats);
 end
 
-handles.central_signal = cmat2image(cmats.cmat_cent, presets); 
+handles.central_signal = cmat2image(cmats.cmat_cent, presets);
 handles.bg_signal = cmat2image(cmats.cmat_bg, presets);
+
+% handles.central_signal = cmat2spotAv(cmats.cmat_cent, presets);
+% handles.bg_signal = cmat2spotAv(cmats.cmat_cent, presets);
 
 handles.last_preset_inputs = new_preset_inputs;
 handles.presets = presets;

@@ -4,7 +4,7 @@ function [ corrected_data ] = HP_correct( data, HPC_map )
 frames = size(data, 3);
 
 for i = 1:frames
-    corrected_data(:,:,i) = double(data(:,:,i)) - HPC_map;
+    corrected_data(:,:,i) = double(data(:,:,i)) - double(HPC_map);
 end
 end
 
