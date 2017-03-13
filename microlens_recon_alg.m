@@ -1,7 +1,7 @@
-function [ central_signal bg_signal ] = microlens_recon_alg( hObject, handles, data, imsize, pattern, diff_limit_px )
+function microlens_recon_alg( hObject, handles, data, imsize, pattern, diff_limit_px, dbl_lines, dbl_cols)
 %Wrapper function for reconstruction alg with sthlm microlens approach
 
-new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'diff_lim_px', diff_limit_px)
+new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'diff_lim_px', diff_limit_px);
 if ~isfield(handles, 'last_preset_inputs') || ~isequal(new_preset_inputs, handles.last_preset_inputs);
     presets = make_presets(imsize, pattern, diff_limit_px);
 else
@@ -13,8 +13,8 @@ if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats);
 end
 
-handles.central_signal = cmat2image(cmats.cmat_cent, presets);
-handles.bg_signal = cmat2image(cmats.cmat_bg, presets);
+[handles.central_signal handles.fr_p_line handles.fr_p_column] = cmat2image(cmats.cmat_cent, presets, dbl_lines, dbl_cols);
+handles.bg_signal = cmat2image(cmats.cmat_bg, presets, dbl_lines, dbl_cols);
 
 % handles.central_signal = cmat2spotAv(cmats.cmat_cent, presets);
 % handles.bg_signal = cmat2spotAv(cmats.cmat_cent, presets);

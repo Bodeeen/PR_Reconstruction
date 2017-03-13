@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 09-Mar-2017 19:04:11
+% Last Modified by GUIDE v2.5 13-Mar-2017 17:01:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -250,7 +250,9 @@ diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pix
 imsize = size(data)
 pattern = handles.pattern;
 if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, diff_limit_px)
+    dbl_lines = str2double(handles.dbl_lines_edit.String);
+    dbl_cols = str2double(handles.dbl_cols_edit.String);
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, diff_limit_px, dbl_lines, dbl_cols)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
@@ -453,7 +455,6 @@ function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     handles.recon_im = handles.central_signal - handles.bg_sub_slider.Value*handles.bg_signal;
-    handles.recon_uncorr = handles.recon_im;
     guidata(hObject, handles);
 end
 
@@ -647,7 +648,7 @@ function Multi_frame_recon_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
-D = dir(LoadDataPathName);
+D = dir(strcat(LoadDataPathName, '\*.hdf5'));
 fileNames = {D([D.isdir] == 0)};  
 fileNames = fileNames{1};
 [~, file_indexes] = sort([fileNames.datenum]);
@@ -657,14 +658,17 @@ pattern = handles.pattern;
 frames = length(file_indexes)-1
 frame = 0
 bg_sub = handles.bg_sub_slider.Value;
-for i = file_indexes(2:end)
+for i = file_indexes
+    disp(strcat('Reconstructing: ', fileNames(i).name));
     frame = frame + 1;
     filepath = strcat(LoadDataPathName, '\', fileNames(i).name);
     raw_data = load_image_stack(filepath);
     corrected_raw_data = frame_correction(raw_data);
     imsize = size(corrected_raw_data);
     if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, diff_limit_px)
+        dbl_lines = str2double(handles.dbl_lines_edit.String);
+        dbl_cols = str2double(handles.dbl_cols_edit.String);
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, diff_limit_px, dbl_lines, dbl_cols)
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
@@ -685,6 +689,10 @@ for i = file_indexes(2:end)
         handles.bg_signal = bg_signal;
     end
     recon = handles.central_signal - bg_sub*handles.bg_signal;
+    skew_nm = str2double(handles.skew_fac_edit.String)/str2double(handles.pixel_size_edit.String);
+    line_nm = str2double(handles.line_px_edit.String)/str2double(handles.pixel_size_edit.String);
+    cols_p_square = sqrt(handles.nframes);
+    recon = Skew_stripe_corr(skew_nm, line_nm, recon, cols_p_square);
     if frame == 1
         stack = recon;
     else
@@ -724,18 +732,18 @@ end
 
 
 
-function skew_nm_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to skew_nm_edit (see GCBO)
+function skew_fac_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to skew_fac_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of skew_nm_edit as text
-%        str2double(get(hObject,'String')) returns contents of skew_nm_edit as a double
+% Hints: get(hObject,'String') returns contents of skew_fac_edit as text
+%        str2double(get(hObject,'String')) returns contents of skew_fac_edit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function skew_nm_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to skew_nm_edit (see GCBO)
+function skew_fac_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to skew_fac_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -747,18 +755,18 @@ end
 
 
 
-function line_nm_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to line_nm_edit (see GCBO)
+function line_px_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to line_px_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of line_nm_edit as text
-%        str2double(get(hObject,'String')) returns contents of line_nm_edit as a double
+% Hints: get(hObject,'String') returns contents of line_px_edit as text
+%        str2double(get(hObject,'String')) returns contents of line_px_edit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function line_nm_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to line_nm_edit (see GCBO)
+function line_px_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to line_px_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -774,10 +782,12 @@ function skew_stripe_corr_Callback(hObject, eventdata, handles)
 % hObject    handle to skew_stripe_corr (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-skew_nm = str2double(handles.skew_nm_edit.String)/str2double(handles.pixel_size_edit.String);
-line_nm = str2double(handles.line_nm_edit.String)/str2double(handles.pixel_size_edit.String);
-cols_p_square = sqrt(handles.nframes);
-handles.recon_im = Skew_stripe_corr(skew_nm, line_nm, handles.recon_im, cols_p_square);
+update_recon_im(hObject, handles)
+handles = guidata(hObject);
+skew_fac = str2double(handles.skew_fac_edit.String);
+line_px = str2double(handles.line_px_edit.String);
+cols_p_square = handles.fr_p_line;
+handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, cols_p_square);
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
 
@@ -787,6 +797,53 @@ function reset_corr_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to reset_corr_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.recon_im = handles.recon_uncorr;
+update_recon_im(hObject, handles)
+handles = guidata(hObject);
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
+
+
+
+function dbl_lines_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to dbl_lines_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of dbl_lines_edit as text
+%        str2double(get(hObject,'String')) returns contents of dbl_lines_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function dbl_lines_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to dbl_lines_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function dbl_cols_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to dbl_cols_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of dbl_cols_edit as text
+%        str2double(get(hObject,'String')) returns contents of dbl_cols_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function dbl_cols_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to dbl_cols_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
