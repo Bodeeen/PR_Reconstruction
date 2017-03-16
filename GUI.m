@@ -259,7 +259,7 @@ else
         data = bleaching_correction(data, 'Additive');
     end
     camera_pixel = str2double(handles.pixel_size_edit.String);
-    objp = 20 / camera_pixel;
+    objp = 20 / camera_pixel; %I think 20 is output pixel size
     number_scanning_steps = sqrt(size(data,3)) - 1;
     shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
     pinhole_size = str2double(handles.pinhole_edit.String);
@@ -691,7 +691,7 @@ for i = file_indexes
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
-            data = bleaching_correction(data, mode);
+            data = bleaching_correction(data, 'Additive');
         end
         camera_pixel = str2double(handles.pixel_size_edit.String);
         objp = 20 / camera_pixel;
