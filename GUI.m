@@ -208,7 +208,7 @@ pattern_data = load_image_stack(filepath);
 pattern_im = mean(pattern_data, 3);
 handles.pattern_im = pattern_im;
 update_pattern_id_im(hObject, handles)
-handles = guidata(hObject); %Get updated version of handles
+handles = guidata(hObject); %Get updated version of handles (necessary?)
 guidata(hObject, handles)
 
 % --- Executes on button press in Load_HPCmap.
@@ -256,7 +256,7 @@ if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
-        data = bleaching_correction(data, mode);
+        data = bleaching_correction(data, 'Additive');
     end
     camera_pixel = str2double(handles.pixel_size_edit.String);
     objp = 20 / camera_pixel;
@@ -285,24 +285,15 @@ function find_pattern_Callback(hObject, eventdata, handles)
 % hObject    handle to find_pattern (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
-pattern_id_im = handles.pattern_id_im;
-pattern = AutoPatID( pattern_id_im, expected_period_px )
-handles.pattern = pattern;
-grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
-scale = 10;
-axes(handles.pattern_axis);
-imshow(imresize(pattern_id_im, scale), []);
-hold on
-plot(scale*grid_vectors.x_vec, scale*grid_vectors.y_vec, 'x')
-hold off
-guidata(hObject, handles)
+find_pattern(hObject, eventdata, handles, 'auto')
 
 % --- Executes on button press in find_pat_man.
 function find_pat_man_Callback(hObject, eventdata, handles)
 % hObject    handle to find_pat_man (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+find_pattern(hObject, eventdata, handles, 'man')
+
 
 % --- Executes on button press in find_pat_man.
 function find_pattern(hObject, eventdata, handles, method)
@@ -311,10 +302,11 @@ function find_pattern(hObject, eventdata, handles, method)
 % handles    structure with handles and user data (see GUIDATA)
 expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
 pattern_id_im = handles.pattern_id_im;
-if strcomp(method, 'auto')
+if strcmp(method, 'auto')
     pattern = AutoPatID( pattern_id_im, expected_period_px )
-elseif strcomp(method, 'man')
-    pattern = switching_pattern_identification_manual_freq_and_phase
+elseif strcmp(method, 'man')
+    pattern = pattern_identification( pattern_id_im, expected_period_px )
+end
 handles.pattern = pattern;
 grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
 scale = 10;
