@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 13-Mar-2017 17:01:47
+% Last Modified by GUIDE v2.5 16-Mar-2017 09:48:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -288,6 +288,33 @@ function find_pattern_Callback(hObject, eventdata, handles)
 expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
 pattern_id_im = handles.pattern_id_im;
 pattern = AutoPatID( pattern_id_im, expected_period_px )
+handles.pattern = pattern;
+grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
+scale = 10;
+axes(handles.pattern_axis);
+imshow(imresize(pattern_id_im, scale), []);
+hold on
+plot(scale*grid_vectors.x_vec, scale*grid_vectors.y_vec, 'x')
+hold off
+guidata(hObject, handles)
+
+% --- Executes on button press in find_pat_man.
+function find_pat_man_Callback(hObject, eventdata, handles)
+% hObject    handle to find_pat_man (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% --- Executes on button press in find_pat_man.
+function find_pattern(hObject, eventdata, handles, method)
+% hObject    handle to find_pat_man (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
+pattern_id_im = handles.pattern_id_im;
+if strcomp(method, 'auto')
+    pattern = AutoPatID( pattern_id_im, expected_period_px )
+elseif strcomp(method, 'man')
+    pattern = switching_pattern_identification_manual_freq_and_phase
 handles.pattern = pattern;
 grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
 scale = 10;
@@ -847,3 +874,6 @@ function dbl_cols_edit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+

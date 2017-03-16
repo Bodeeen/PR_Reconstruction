@@ -13,7 +13,7 @@ if strcmp(format,'tif') || strcmp(format, 'tiff')
     for i = 2:frames
         stack = cat(3, stack, imread(path, i));
     end
-    stack = sum(stack, 3);
+%     stack = sum(stack, 3);
     stack = rot90(flipud(stack), -1);
 elseif strcmp(format, 'hdf5')
 %%HDF5
