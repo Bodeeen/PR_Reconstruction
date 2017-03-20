@@ -691,7 +691,7 @@ for i = file_indexes
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
-            data = bleaching_correction(data, 'Additive');
+            data = bleaching_correction(corrected_raw_data, 'Additive');
         end
         camera_pixel = str2double(handles.pixel_size_edit.String);
         objp = 20 / camera_pixel;

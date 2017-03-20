@@ -29,6 +29,7 @@ function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargi
 %         output = uint16(2^16*output/max(output(:)));
 
 %% Scale values appropriatly
+        recon = recon + 10; % add offset to accomodate negative values. 
         if max(recon(:)) < 2^16/500
             output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data
         elseif max(recon(:)) < 2^16/50

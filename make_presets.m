@@ -37,7 +37,7 @@ B_cent = sparse([], [], [], By, Bx, size_x*size_y);
 B_bg = sparse([], [], [], By, Bx, size_x*size_y);
 
 sigma_cent = diff_lim_px/2.355;
-sigma_bg = sqrt(2)*sigma_cent;
+sigma_bg = 10*sigma_cent;
 pi = 3.1416;
 %Assign wights to elements in B
 h = waitbar(0,'Calculating bases...');
@@ -46,7 +46,7 @@ for x = 1:size_x
     for y = 1:size_y
         d = dnull(y,x);
         g_cent = exp(-d^2/(2*sigma_cent^2));
-        g_bg = exp(-d^2/(2*sigma_bg^2));
+        g_bg = 1;%exp(-d^2/(2*sigma_bg^2));;
         %Nulls are ordered first vertically down then horizontally
         null = (nx(y,x)-1)*nulls_y + ny(y,x);
         pixel = (x-1)*size_y+y;

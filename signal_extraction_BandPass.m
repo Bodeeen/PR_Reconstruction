@@ -23,21 +23,39 @@ B_bg = presets.B_bg;
 
 nnulls = size(B_cent,2);
 cmat_cent = zeros(nnulls,nframes);
-cmat_bg = zeros(nnulls,nframes);
+% cmat_bg = zeros(nnulls,nframes);
+cmat_bg = zeros(nnulls,nframes); % For dual coord approach
 %Calculate weights to correct for different pinholes having
 %different "sum under gaussians"
 W_cent = 1./sum(B_cent, 1)';
-W_bg = 1./sum(B_bg, 1)';
+W_bg_1 = 1./sum(B_bg, 1)';
 
+BBoth = [B_cent B_bg];
+sBB = sparse(BBoth);
+G = sBB'*sBB;
+Ginv = inv(G);
 h = waitbar(0,'Pinholing...');
+% for i = 1:nframes
+%     waitbar(i/nframes);
+%     frame = data(:,:,i);
+%     f = double(reshape(frame,[numel(frame), 1]));
+%     cmat_cent(:,i) = W_cent.*(B_cent'*f);
+%     cmat_bg(:,i) = W_bg.*(B_bg'*f);
+%     
+% end
+
 for i = 1:nframes
     waitbar(i/nframes);
     frame = data(:,:,i);
     f = double(reshape(frame,[numel(frame), 1]));
-    cmat_cent(:,i) = W_cent.*(B_cent'*f);
-    cmat_bg(:,i) = W_bg.*(B_bg'*f);
-    
+    cdual = sBB' * f;
+    c = cdual' * Ginv;
+    cmat_cent(:,i) = c(1:nnulls);
+    cmat_bg(:,i) = c(nnulls+1:end);
 end
+
+
+
 close(h)
 
 cmats = struct('cmat_cent', cmat_cent, 'cmat_bg', cmat_bg);

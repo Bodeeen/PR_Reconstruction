@@ -12,10 +12,9 @@ vbg = sgolayfilt(tot_sig_bg, 1, 101);
 vbg = vbg / mean(vbg);
 vmat_bg = sparse(diag(1./vbg));
 
-
-
 cmat_cent_corr = cmats.cmat_cent * vmat_cent;
 cmat_bg_corr = cmats.cmat_bg * vmat_bg;
+
 
 cmats_corr = struct('cmat_cent', cmat_cent_corr, 'cmat_bg', cmat_bg_corr);
 end

@@ -15,7 +15,6 @@ end
 
 [handles.central_signal handles.fr_p_line handles.fr_p_column] = cmat2image(cmats.cmat_cent, presets, dbl_lines, dbl_cols);
 handles.bg_signal = cmat2image(cmats.cmat_bg, presets, dbl_lines, dbl_cols);
-
 % handles.central_signal = cmat2spotAv(cmats.cmat_cent, presets);
 % handles.bg_signal = cmat2spotAv(cmats.cmat_cent, presets);
 
