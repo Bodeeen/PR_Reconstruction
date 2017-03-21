@@ -59,6 +59,10 @@ handles.output = hObject;
 % Update handles structure
 set(handles.pattern_panel, 'SelectionChangeFcn',  @pattern_panel_SelectionChangeFcn);
 set(handles.bleach_corr_check, 'Value', 1);
+Cent_G_fwhm = str2double(handles.pinhole_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
+
+UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
 switch handles.pattern_panel.SelectedObject.String
     case 'Microlenses'
         handles.expected_period = str2double(handles.ulens_period_edit.String);
@@ -276,7 +280,7 @@ else
 end
 update_recon_im(hObject, handles)
 update_recon_axis(hObject, handles)
-UpdatePinholeGraph(handles, Cent_G_fwhm, handles.bg_sub_slider.Value)
+
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
 
 guidata(hObject, handles);
@@ -328,7 +332,10 @@ function ulens_period_edit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of ulens_period_edit as text
 %        str2double(get(hObject,'String')) returns contents of ulens_period_edit as a double
+Cent_G_fwhm = str2double(handles.pinhole_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
+UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
 
 % --- Executes during object creation, after setting all properties.
 function ulens_period_edit_CreateFcn(hObject, eventdata, handles)
@@ -397,7 +404,10 @@ function pinhole_edit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of pinhole_edit as text
 %        str2double(get(hObject,'String')) returns contents of pinhole_edit as a double
+Cent_G_fwhm = str2double(handles.pinhole_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
+UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
 
 % --- Executes during object creation, after setting all properties.
 function pinhole_edit_CreateFcn(hObject, eventdata, handles)
@@ -422,8 +432,7 @@ function bg_sub_slider_Callback(hObject, eventdata, handles)
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 sliderValue = get(handles.bg_sub_slider,'Value')
 set(handles.bg_sub_edit,'String', num2str(sliderValue))
-diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
-UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
+
 handles = guidata(hObject);
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
@@ -452,8 +461,7 @@ function bg_sub_edit_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of bg_sub_edit as a double
 editValue = get(handles.bg_sub_edit,'String')
 set(handles.bg_sub_slider,'Value', str2double(editValue))
-diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
-UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
+
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
 update_recon_axis(hObject, handles);
@@ -883,7 +891,10 @@ function BGFWHM_edit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of BGFWHM_edit as text
 %        str2double(get(hObject,'String')) returns contents of BGFWHM_edit as a double
+Cent_G_fwhm = str2double(handles.pinhole_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
+UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
 
 % --- Executes during object creation, after setting all properties.
 function BGFWHM_edit_CreateFcn(hObject, eventdata, handles)
