@@ -1,4 +1,4 @@
-function [cmats] = signal_extraction(data, presets, diff_lim_px)
+function [cmats] = signal_extraction(data, presets)
 % Given the pattern period and offset as well as the output pixel length
 % and the scanning pixel length it constructs the central and peripheral
 % signal frames as used in the publication: 'Nanoscopy with more than a
@@ -8,7 +8,7 @@ function [cmats] = signal_extraction(data, presets, diff_lim_px)
 % pattern is the periods and offsets of the on-switched regions
 
 %% error checks
-assert(nargin == 3)
+assert(nargin == 2)
 
 %Presets
 
@@ -18,22 +18,17 @@ size_y = size(data, 1);
 size_x = size(data, 2);
 nframes = size(data, 3);
 
-B_cent = presets.B_cent;
-B_bg = presets.B_bg;
-
-nnulls = size(B_cent,2);
-cmat_cent = zeros(nnulls,nframes);
-% cmat_bg = zeros(nnulls,nframes);
-cmat_bg = zeros(nnulls,nframes); % For dual coord approach
+B = presets.B;
+Ginv = presets.Ginv;
+nnulls = presets.nulls_x * presets.nulls_y;
+N_bases = size(B, 2)/nnulls;
+pixels = size(B,1);
+cmat = zeros(nnulls,nframes, N_bases);
 %Calculate weights to correct for different pinholes having
 %different "sum under gaussians"
-W_cent = 1./sum(B_cent, 1)';
-W_bg_1 = 1./sum(B_bg, 1)';
+% W_cent = 1./sum(B_cent, 1)';
+% W_bg_1 = 1./sum(B_bg, 1)';
 
-BBoth = [B_cent B_bg];
-sBB = sparse(BBoth);
-G = sBB'*sBB;
-Ginv = inv(G);
 h = waitbar(0,'Pinholing...');
 % for i = 1:nframes
 %     waitbar(i/nframes);
@@ -48,17 +43,14 @@ for i = 1:nframes
     waitbar(i/nframes);
     frame = data(:,:,i);
     f = double(reshape(frame,[numel(frame), 1]));
-    cdual = sBB' * f;
+    cdual = B' * f;
     c = cdual' * Ginv;
-    cmat_cent(:,i) = c(1:nnulls);
-    cmat_bg(:,i) = c(nnulls+1:end);
+    cmats(:,i,:) = reshape(c, [nnulls, 1, N_bases]);
 end
 
 
 
 close(h)
-
-cmats = struct('cmat_cent', cmat_cent, 'cmat_bg', cmat_bg);
 
 end
 

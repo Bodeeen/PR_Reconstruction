@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 16-Mar-2017 09:48:19
+% Last Modified by GUIDE v2.5 21-Mar-2017 11:30:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -246,13 +246,15 @@ if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
 end
 handles.nframes = size(data, 3);
 
-diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+Cent_G_fwhm = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+
 imsize = size(data)
 pattern = handles.pattern;
 if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     dbl_lines = str2double(handles.dbl_lines_edit.String);
     dbl_cols = str2double(handles.dbl_cols_edit.String);
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, diff_limit_px, dbl_lines, dbl_cols)
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, Cent_G_fwhm, BG_G_fwhm, dbl_lines, dbl_cols)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
@@ -274,7 +276,7 @@ else
 end
 update_recon_im(hObject, handles)
 update_recon_axis(hObject, handles)
-UpdatePinholeGraph(handles, diff_limit_px, handles.bg_sub_slider.Value)
+UpdatePinholeGraph(handles, Cent_G_fwhm, handles.bg_sub_slider.Value)
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
 
 guidata(hObject, handles);
@@ -672,7 +674,9 @@ fileNames = {D([D.isdir] == 0)};
 fileNames = fileNames{1};
 [~, file_indexes] = sort([fileNames.datenum]);
 
-diff_limit_px = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+Cent_G_fwhm = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+BG_G_fwhm = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+
 pattern = handles.pattern;
 frames = length(file_indexes)-1
 frame = 0
@@ -687,7 +691,7 @@ for i = file_indexes
     if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
         dbl_lines = str2double(handles.dbl_lines_edit.String);
         dbl_cols = str2double(handles.dbl_cols_edit.String);
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, diff_limit_px, dbl_lines, dbl_cols)
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, Cent_G_fwhm, BG_G_fwhm, dbl_lines, dbl_cols)
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
@@ -869,3 +873,26 @@ end
 
 
 
+
+
+
+function BGFWHM_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to BGFWHM_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of BGFWHM_edit as text
+%        str2double(get(hObject,'String')) returns contents of BGFWHM_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function BGFWHM_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to BGFWHM_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

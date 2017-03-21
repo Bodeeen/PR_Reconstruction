@@ -1,5 +1,5 @@
 %% Returns the distances to the closest pattern maxima of the actual positions xj and yj
-function [presets] = make_presets(imsize, pattern, diff_lim_px)
+function [presets] = make_presets(imsize, pattern, Cent_G_fwhm, BG_G_fwhm)
 
 % decode the pattern
 fx = pattern(1);
@@ -34,10 +34,14 @@ nulls_y = ny(end,1);
 By = size_x*size_y;
 Bx = nulls_x*nulls_y;
 B_cent = sparse([], [], [], By, Bx, size_x*size_y);
-B_bg = sparse([], [], [], By, Bx, size_x*size_y);
+BG1 = sparse([], [], [], By, Bx, size_x*size_y);
+BG2 = sparse([], [], [], By, Bx, size_x*size_y);
+BG3 = sparse([], [], [], By, Bx, size_x*size_y);
+BG4 = sparse([], [], [], By, Bx, size_x*size_y);
+BG5 = sparse([], [], [], By, Bx, size_x*size_y);
 
-sigma_cent = diff_lim_px/2.355;
-sigma_bg = 10*sigma_cent;
+sigma_cent = Cent_G_fwhm/2.355;
+sigma_bg = BG_G_fwhm/2.355;
 pi = 3.1416;
 %Assign wights to elements in B
 h = waitbar(0,'Calculating bases...');
@@ -46,7 +50,11 @@ for x = 1:size_x
     for y = 1:size_y
         d = dnull(y,x);
         g_cent = exp(-d^2/(2*sigma_cent^2));
-        g_bg = 1;%exp(-d^2/(2*sigma_bg^2));;
+        bg1 = exp(-d^2/(2*sigma_bg^2));
+        bg2 = 1;
+%         bg3 = -dx(y,x);
+%         bg4 = dy(y,x);
+%         bg5 = -dy(y,x);
         %Nulls are ordered first vertically down then horizontally
         null = (nx(y,x)-1)*nulls_y + ny(y,x);
         pixel = (x-1)*size_y+y;
@@ -54,13 +62,18 @@ for x = 1:size_x
 %             a = 0;
 %         end
         B_cent(pixel , null) = g_cent;
-        B_bg(pixel, null) = g_bg;
+        BG1(pixel, null) = bg1;
+        BG2(pixel, null) = bg2;
+%         BG3(pixel, null) = bg3;
+%         BG4(pixel, null) = bg4;
+%         BG5(pixel, null) = bg5;
     end
 end
 close(h)
 presets.nulls_x = nulls_x;
 presets.nulls_y = nulls_y;
-presets.B_cent = B_cent;
-presets.B_bg = B_bg;
-
+B = [B_cent BG1 BG2];%BG3, BG4, BG5};
+Ginv = inv(B'*B);
+presets.B = B;
+presets.Ginv = Ginv;
 end
