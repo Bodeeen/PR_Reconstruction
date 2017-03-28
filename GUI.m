@@ -284,10 +284,10 @@ else
     handles.central_signal = central_signal;
     handles.bg_signal = bg_signal;
 end
-update_recon_im(hObject, handles)
-update_recon_axis(hObject, handles)
 
-handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
+update_recon_im(hObject, handles)
+handles = guidata(hObject);
+update_recon_axis(hObject, handles)
 
 guidata(hObject, handles);
 
