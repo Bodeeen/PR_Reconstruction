@@ -1,5 +1,5 @@
 %% Returns the distances to the closest pattern maxima of the actual positions xj and yj
-function [presets] = make_presets(imsize, pattern, Cent_G_fwhm, BG_G_fwhm)
+function [presets] = make_presets(imsize, pattern, base_preset)
 
 % decode the pattern
 fx = pattern(1);
@@ -33,46 +33,50 @@ nulls_y = ny(end,1);
 %Make template for pinhole/basis matrix
 By = size_x*size_y;
 Bx = nulls_x*nulls_y;
-B_cent = sparse([], [], [], By, Bx, size_x*size_y);
-BG1 = sparse([], [], [], By, Bx, size_x*size_y);
-BG2 = sparse([], [], [], By, Bx, size_x*size_y);
-BG3 = sparse([], [], [], By, Bx, size_x*size_y);
-BG4 = sparse([], [], [], By, Bx, size_x*size_y);
-BG5 = sparse([], [], [], By, Bx, size_x*size_y);
 
-sigma_cent = Cent_G_fwhm/2.355;
-sigma_bg = BG_G_fwhm/2.355;
+BG2 = sparse([], [], [], By, Bx, size_x*size_y);
+
+sigma_cent = base_preset(1)/2.355;
+
 pi = 3.1416;
-%Assign wights to elements in B
+
+nr_bases = size(nonzeros(base_preset), 1);
+
+g_cent = exp(-dnull.^2/(2.*sigma_cent^2));
+
+%Nulls are ordered first vertically down then horizontally
+null = (nx-1).*nulls_y + ny;
+pixel = (xi-1)*size_y+yi;
 h = waitbar(0,'Calculating bases...');
-for x = 1:size_x
-    waitbar(x/size_x)
-    for y = 1:size_y
-        d = dnull(y,x);
-        g_cent = exp(-d^2/(2*sigma_cent^2));
-        bg1 = exp(-d^2/(2*sigma_bg^2));
-        bg2 = 1;
-%         bg3 = -dx(y,x);
-%         bg4 = dy(y,x);
-%         bg5 = -dy(y,x);
-        %Nulls are ordered first vertically down then horizontally
-        null = (nx(y,x)-1)*nulls_y + ny(y,x);
-        pixel = (x-1)*size_y+y;
-%         if null < 1 || pixel < 1
-%             a = 0;
-%         end
-        B_cent(pixel , null) = g_cent;
-        BG1(pixel, null) = bg1;
-        BG2(pixel, null) = bg2;
-%         BG3(pixel, null) = bg3;
-%         BG4(pixel, null) = bg4;
-%         BG5(pixel, null) = bg5;
-    end
+B_cent = sparse([], [], [], By, Bx, By);
+
+
+for i = 1:By
+    B_cent(pixel(i) , null(i)) = g_cent(i);
 end
+B = B_cent;
+waitbar(1/nr_bases)
+if base_preset(2) ~= 0
+    sigma_bg = base_preset(2)/2.355;
+    BG1 = sparse([], [], [], By, Bx, size_x*size_y);
+    bg1 = exp(-dnull.^2/(2.*sigma_bg^2));
+    for i = 1:numel(xi)
+        BG1(pixel(i) , null(i)) = bg1(i);
+    end
+    B = [B BG1];
+end
+waitbar(2/nr_bases)
+if base_preset(3) ~= 0
+    BG2 = sparse([], [], [], By, Bx, size_x*size_y);
+    for i = 1:numel(xi)
+        BG2(pixel(i) , null(i)) = 1;
+    end
+    B = [B BG2];
+end
+waitbar(3/nr_bases)
 close(h)
 presets.nulls_x = nulls_x;
 presets.nulls_y = nulls_y;
-B = [B_cent BG1 BG2];%BG3, BG4, BG5};
 Ginv = inv(B'*B);
 presets.B = B;
 presets.Ginv = Ginv;

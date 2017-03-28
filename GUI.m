@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 21-Mar-2017 11:30:41
+% Last Modified by GUIDE v2.5 27-Mar-2017 17:03:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -62,7 +62,7 @@ set(handles.bleach_corr_check, 'Value', 1);
 Cent_G_fwhm = str2double(handles.pinhole_edit.String);
 BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
-UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
+UpdatePinholeGraph(handles)
 switch handles.pattern_panel.SelectedObject.String
     case 'Microlenses'
         handles.expected_period = str2double(handles.ulens_period_edit.String);
@@ -250,15 +250,21 @@ if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
 end
 handles.nframes = size(data, 3);
 
-Cent_G_fwhm = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+base_preset = [0 0 0];
+base_preset(1) = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+if handles.BG_FWHM_check.Value
+    base_preset(2) = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+end
+if handles.Const_bg_check.Value
+    base_preset(3) = 1;
+end
 
-imsize = size(data)
+imsize = size(data);
 pattern = handles.pattern;
 if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     dbl_lines = str2double(handles.dbl_lines_edit.String);
     dbl_cols = str2double(handles.dbl_cols_edit.String);
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, Cent_G_fwhm, BG_G_fwhm, dbl_lines, dbl_cols)
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, dbl_lines, dbl_cols)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
@@ -332,10 +338,9 @@ function ulens_period_edit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of ulens_period_edit as text
 %        str2double(get(hObject,'String')) returns contents of ulens_period_edit as a double
-Cent_G_fwhm = str2double(handles.pinhole_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
-UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
+
+UpdatePinholeGraph(handles)
 
 % --- Executes during object creation, after setting all properties.
 function ulens_period_edit_CreateFcn(hObject, eventdata, handles)
@@ -404,10 +409,9 @@ function pinhole_edit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of pinhole_edit as text
 %        str2double(get(hObject,'String')) returns contents of pinhole_edit as a double
-Cent_G_fwhm = str2double(handles.pinhole_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
-UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
+
+UpdatePinholeGraph(handles)
 
 % --- Executes during object creation, after setting all properties.
 function pinhole_edit_CreateFcn(hObject, eventdata, handles)
@@ -483,7 +487,8 @@ end
 function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
-    handles.recon_im = handles.central_signal - handles.bg_sub_slider.Value*handles.bg_signal;
+    slider_val = handles.bg_sub_slider.Value;
+    handles.recon_im = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
     guidata(hObject, handles);
 end
 
@@ -720,10 +725,10 @@ for i = file_indexes
         handles.bg_signal = bg_signal;
     end
     recon = handles.central_signal - bg_sub*handles.bg_signal;
-    skew_nm = str2double(handles.skew_fac_edit.String)/str2double(handles.pixel_size_edit.String);
-    line_nm = str2double(handles.line_px_edit.String)/str2double(handles.pixel_size_edit.String);
+    skew_fac = str2double(handles.skew_fac_edit.String);
+    line_px = str2double(handles.line_px_edit.String);
     cols_p_square = sqrt(handles.nframes);
-    recon = Skew_stripe_corr(skew_nm, line_nm, recon, cols_p_square);
+    recon = Skew_stripe_corr(skew_fac, line_px, recon, cols_p_square);
     if frame == 1
         stack = recon;
     else
@@ -884,17 +889,15 @@ end
 
 
 
-function BGFWHM_edit_Callback(hObject, eventdata, handles)
+function BGFWHM_edit_Callback(hObject, ~, handles)
 % hObject    handle to BGFWHM_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of BGFWHM_edit as text
 %        str2double(get(hObject,'String')) returns contents of BGFWHM_edit as a double
-Cent_G_fwhm = str2double(handles.pinhole_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
-UpdatePinholeGraph(handles, Cent_G_fwhm, BG_G_fwhm)
+UpdatePinholeGraph(handles)
 
 % --- Executes during object creation, after setting all properties.
 function BGFWHM_edit_CreateFcn(hObject, eventdata, handles)
@@ -907,3 +910,22 @@ function BGFWHM_edit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in BG_FWHM_check.
+function BG_FWHM_check_Callback(hObject, eventdata, handles)
+% hObject    handle to BG_FWHM_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+UpdatePinholeGraph(handles)
+% Hint: get(hObject,'Value') returns toggle state of BG_FWHM_check
+
+
+% --- Executes on button press in Const_bg_check.
+function Const_bg_check_Callback(hObject, eventdata, handles)
+% hObject    handle to Const_bg_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+UpdatePinholeGraph(handles)
+% Hint: get(hObject,'Value') returns toggle state of Const_bg_check

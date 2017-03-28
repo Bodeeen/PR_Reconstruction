@@ -1,12 +1,12 @@
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
-D = dir(LoadDataPathName);
+D = dir(strcat(LoadDataPathName, '\*.hdf5'));
 fileNames = {D([D.isdir] == 0)};  
 fileNames = fileNames{1};
 [~, file_indexes] = sort([fileNames.datenum]);
 
 frame_nr = 0;
 
-for i = file_indexes(2:end)
+for i = file_indexes(1:end)
     frame_nr = frame_nr + 1;
     filepath = strcat(LoadDataPathName, '\', fileNames(i).name);
     raw_data = load_image_stack(filepath);
