@@ -13,6 +13,8 @@ if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats);
 end
 
+
+
 [handles.central_signal, handles.fr_p_line, handles.fr_p_column] = cmat2image(cmats(:,:,1), presets, dbl_lines, dbl_cols);
 cmat_bg = sum(cmats(:,:,2:end), 3);
 handles.bg_signal = cmat2image(cmat_bg, presets, dbl_lines, dbl_cols);

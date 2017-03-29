@@ -12,7 +12,7 @@ cmats(:,:,1) = cent_corr;
 if size(cmats, 3) > 1
     tot_sig = mean(cmats(:,:,2), 1);
 
-    v = sgolayfilt(tot_sig, 1, 101);
+    v = tot_sig;%sgolayfilt(tot_sig, 1, 101);
     v = v / mean(v);
     vmat_cent = sparse(diag(1./v));
     
@@ -23,7 +23,7 @@ end
 if size(cmats, 3) > 2
     tot_sig = mean(cmats(:,:,3), 1);
 
-    v = sgolayfilt(tot_sig, 1, 101);
+    v = tot_sig;%sgolayfilt(tot_sig, 1, 101);
     v = v / mean(v);
     vmat_cent = sparse(diag(1./v));
     

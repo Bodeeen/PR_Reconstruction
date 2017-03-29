@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 27-Mar-2017 17:03:25
+% Last Modified by GUIDE v2.5 29-Mar-2017 13:29:03
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -929,3 +929,12 @@ function Const_bg_check_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 UpdatePinholeGraph(handles)
 % Hint: get(hObject,'Value') returns toggle state of Const_bg_check
+
+
+% --- Executes on button press in Noise_corr_but.
+function Noise_corr_but_Callback(hObject, eventdata, handles)
+% hObject    handle to Noise_corr_but (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[handles.central_signal handles.bg_signal] = Noise_corr(handles.central_signal, handles.bg_signal, handles.presets);
+Guidata(hObject, handles);

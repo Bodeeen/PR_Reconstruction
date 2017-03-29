@@ -75,6 +75,7 @@ if base_preset(3) ~= 0
 end
 waitbar(3/nr_bases)
 close(h)
+presets.null_im = null;
 presets.nulls_x = nulls_x;
 presets.nulls_y = nulls_y;
 Ginv = inv(B'*B);
