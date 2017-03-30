@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 29-Mar-2017 13:29:03
+% Last Modified by GUIDE v2.5 30-Mar-2017 17:14:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -244,6 +244,7 @@ function run_reconstruction_Callback(hObject, eventdata, handles)
 % hObject    handle to run_reconstruction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles.working_text.String = 'Reconstructing image...'
 data = handles.raw_data;
 if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
     data = HP_correct(data, handles.HPC_im);
@@ -288,7 +289,7 @@ end
 update_recon_im(hObject, handles)
 handles = guidata(hObject);
 update_recon_axis(hObject, handles)
-
+handles.working_text.String = 'Finished!'
 guidata(hObject, handles);
 
 
@@ -488,7 +489,11 @@ function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     slider_val = handles.bg_sub_slider.Value;
-    handles.recon_im = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
+    if handles.show_denoised_check.Value && isfield(handles, 'central_signal_ncorr')
+        handles.recon_im = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
+    else
+        handles.recon_im = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
+    end
     guidata(hObject, handles);
 end
 
@@ -937,4 +942,30 @@ function Noise_corr_but_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 [handles.central_signal handles.bg_signal] = Noise_corr(handles.central_signal, handles.bg_signal, handles.presets);
+update_recon_im(hObject, handles)
+handles = guidata(hObject);
+update_recon_axis(hObject, handles)
 Guidata(hObject, handles);
+
+
+% --- Executes on button press in noise_corr_check.
+function noise_corr_check_Callback(hObject, eventdata, handles)
+% hObject    handle to noise_corr_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of noise_corr_check
+
+
+% --- Executes on button press in show_denoised_check.
+function show_denoised_check_Callback(hObject, eventdata, handles)
+% hObject    handle to show_denoised_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of show_denoised_check
+update_recon_im(hObject, handles);
+handles = guidata(hObject);
+update_recon_axis(hObject, handles);
+handles = guidata(hObject);
+guidata(hObject, handles);

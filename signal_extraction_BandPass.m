@@ -23,13 +23,13 @@ Ginv = presets.Ginv;
 nnulls = presets.nulls_x * presets.nulls_y;
 N_bases = size(B, 2)/nnulls;
 pixels = size(B,1);
-cmat = zeros(nnulls,nframes, N_bases);
+cmats = zeros(nnulls,nframes, N_bases);
 %Calculate weights to correct for different pinholes having
 %different "sum under gaussians"
 % W_cent = 1./sum(B_cent, 1)';
 % W_bg_1 = 1./sum(B_bg, 1)';
 
-h = waitbar(0,'Pinholing...');
+% h = waitbar(0,'Pinholing...');
 % for i = 1:nframes
 %     waitbar(i/nframes);
 %     frame = data(:,:,i);
@@ -39,20 +39,19 @@ h = waitbar(0,'Pinholing...');
 %     
 % end
 
-for i = 1:nframes
-    waitbar(i/nframes);
-    frame = data(:,:,i);
-    f = double(reshape(frame,[numel(frame), 1]));
-    cdual = B' * f;
-    c = cdual' * Ginv;
-    cmats(:,i,:) = reshape(c, [nnulls, 1, N_bases]);
+f = reshape(data, [size_y*size_x nframes]);
+
+cdual = B' * double(f);
+c = cdual' * Ginv;
+c_re = reshape(c, [nframes nnulls N_bases]);
+cmats = zeros(nnulls, nframes, N_bases);
+for i = 1:N_bases
+    cmats(:,:,i) = c_re(:,:,i)';
 end
 
 
-
-close(h)
-
 end
+
 
 
 function shifted_im = shift_columns(im, pixels, columns_per_square)

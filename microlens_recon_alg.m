@@ -10,14 +10,21 @@ end
 cmats = signal_extraction_BandPass(data, presets);
 
 if handles.bleach_corr_check.Value
-    cmats = cmats_bleach_corr(cmats);
+    cmats = cmats_bleach_corr(cmats, presets);
 end
-
-
 
 [handles.central_signal, handles.fr_p_line, handles.fr_p_column] = cmat2image(cmats(:,:,1), presets, dbl_lines, dbl_cols);
 cmat_bg = sum(cmats(:,:,2:end), 3);
 handles.bg_signal = cmat2image(cmat_bg, presets, dbl_lines, dbl_cols);
+
+if handles.noise_corr_check.Value
+    cmats_corr = Noise_corr_cmats(cmats, presets);
+    [handles.central_signal_ncorr, handles.fr_p_line, handles.fr_p_column] = cmat2image(cmats_corr(:,:,1), presets, dbl_lines, dbl_cols);
+    cmat_bg = sum(cmats_corr(:,:,2:end), 3);
+    handles.bg_signal_ncorr = cmat2image(cmat_bg, presets, dbl_lines, dbl_cols);
+end
+
+
 % handles.central_signal = cmat2spotAv(cmats.cmat_cent, presets);
 % handles.bg_signal = cmat2spotAv(cmats.cmat_cent, presets);
 
