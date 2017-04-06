@@ -7,7 +7,7 @@ nframes = size(cmats, 2);
 
 twostep = 1;
 
-cmat_bg_filtered = Spat_filt_cmat(cmats(:,:,N_bases), presets, 20, 8);
+cmat_bg_filtered = Spat_filt_cmat_LS(cmats(:,:,N_bases));
 
 
 C = [];
@@ -34,7 +34,7 @@ end
 
 if N_bases > 2 && twostep
     
-    cmat_bg_filtered = Spat_filt_cmat(cmats(:,:,N_bases-1), presets, 10, 4);
+    cmat_bg_filtered = Spat_filt_cmat_conv(cmats(:,:,N_bases-1), presets, 10, 4);
 
     C = [];
     for i = 1:N_bases-1
@@ -55,5 +55,6 @@ if N_bases > 2 && twostep
         cmats_corr(:,:,i) = c_re(:,:,i)';
     end
     
+end
 end
 

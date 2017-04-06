@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 30-Mar-2017 17:14:58
+% Last Modified by GUIDE v2.5 31-Mar-2017 16:06:05
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -428,14 +428,14 @@ end
 
 
 % --- Executes on slider movement.
-function bg_sub_slider_Callback(hObject, eventdata, handles)
-% hObject    handle to bg_sub_slider (see GCBO)
+function slider_Callback(hObject, eventdata, handles)
+% hObject    handle to slider (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-sliderValue = get(handles.bg_sub_slider,'Value')
+sliderValue = get(handles.slider,'Value')
 set(handles.bg_sub_edit,'String', num2str(sliderValue))
 
 handles = guidata(hObject);
@@ -445,8 +445,8 @@ update_recon_axis(hObject, handles);
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function bg_sub_slider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to bg_sub_slider (see GCBO)
+function slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -465,7 +465,7 @@ function bg_sub_edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of bg_sub_edit as text
 %        str2double(get(hObject,'String')) returns contents of bg_sub_edit as a double
 editValue = get(handles.bg_sub_edit,'String')
-set(handles.bg_sub_slider,'Value', str2double(editValue))
+set(handles.slider,'Value', str2double(editValue))
 
 update_recon_im(hObject, handles);
 handles = guidata(hObject);
@@ -488,7 +488,7 @@ end
 function update_recon_im(hObject, handles)
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
-    slider_val = handles.bg_sub_slider.Value;
+    slider_val = handles.slider.Value;
     if handles.show_denoised_check.Value && isfield(handles, 'central_signal_ncorr')
         handles.recon_im = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
     else
@@ -545,12 +545,14 @@ function save_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 filepath = handles.data_edit.String;
 
-bg_sub_fac = handles.bg_sub_slider.Value;
-diff_lim = str2double(handles.pinhole_edit.String);
+slider_val = handles.slider.Value;
+cent_g = str2double(handles.pinhole_edit.String);
+bg_g = str2double(handles.BGFWHM_edit.String);
+cb = handles.Const_bg_check.Value;
 if isfield(handles, 'wf_im')
-    save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif', 'widefield', handles.wf_im);
+    save_image(handles.recon_im, slider_val, cent_g, bg_g, cb, filepath, 'tif', 'widefield', handles.wf_im);
 else
-    save_image(handles.recon_im, bg_sub_fac, diff_lim, filepath, 'tif');
+    save_image(handles.recon_im, slider_val, cent_g, bg_g, cb, filepath, 'tif');
 end
 
 % --- Executes on selection change in WF_recon_mode.
@@ -692,13 +694,18 @@ fileNames = {D([D.isdir] == 0)};
 fileNames = fileNames{1};
 [~, file_indexes] = sort([fileNames.datenum]);
 
-Cent_G_fwhm = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+base_preset = [0 0 0];
+base_preset(1) = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
+if handles.BG_FWHM_check.Value
+    base_preset(2) = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
+end
+if handles.Const_bg_check.Value
+    base_preset(3) = 1;
+end
 
 pattern = handles.pattern;
-frames = length(file_indexes)-1
 frame = 0
-bg_sub = handles.bg_sub_slider.Value;
+slider_val = handles.slider.Value;
 for i = file_indexes
     disp(strcat('Reconstructing: ', fileNames(i).name));
     frame = frame + 1;
@@ -709,7 +716,7 @@ for i = file_indexes
     if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
         dbl_lines = str2double(handles.dbl_lines_edit.String);
         dbl_cols = str2double(handles.dbl_cols_edit.String);
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, Cent_G_fwhm, BG_G_fwhm, dbl_lines, dbl_cols)
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, dbl_lines, dbl_cols)
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
@@ -722,14 +729,18 @@ for i = file_indexes
         pinhole_size = str2double(handles.pinhole_edit.String);
         recon_gauss = str2double(handles.ReconGaussSize.String);
         if pinhole_size == recon_gauss
-            [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
+            [central_signal, bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
         else
-            [central_signal bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
+            [central_signal, bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
         end
         handles.central_signal = central_signal;
         handles.bg_signal = bg_signal;
     end
-    recon = handles.central_signal - bg_sub*handles.bg_signal;
+    if handles.noise_corr_check.Value
+        recon = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
+    else
+        recon = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
+    end
     skew_fac = str2double(handles.skew_fac_edit.String);
     line_px = str2double(handles.line_px_edit.String);
     cols_p_square = sqrt(handles.nframes);
@@ -740,8 +751,10 @@ for i = file_indexes
         stack = cat(3, stack, recon);
     end
 end
-diff_lim = str2double(handles.pinhole_edit.String);
-save_image(stack, bg_sub, diff_lim, filepath, 'hdf5')
+cent_g = str2double(handles.pinhole_edit.String);
+bg_g = str2double(handles.BGFWHM_edit.String);
+cb = handles.Const_bg_check.Value;
+save_image(stack, slider_val, cent_g, bg_g, cb, filepath, 'hdf5')
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
 
 guidata(hObject, handles);

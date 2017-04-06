@@ -1,4 +1,4 @@
-function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargin)
+function save_image(recon, bg_sub_fac, cent_g, bg_g, cb, datafilepath, format, varargin)
         vargs = varargin;
         nargs = length(vargs)/2;
         names = vargs(1:2:2*nargs);
@@ -11,7 +11,8 @@ function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargi
         savename = savename{1};
         dname = uigetdir(LoadDataPathName);
         fname = savename
-        savepath = strcat(dname, '\', fname, sprintf('_Reconstruction_%.dnm_pin_%.2f_bg_sub_fac', diff_limit, bg_sub_fac));
+        stringpart = sprintf('_Reconstruction_%.dnm_central_%dnmbg_%dconst_%.2f_centbg_rat', cent_g, bg_g, cb, bg_sub_fac)
+        savepath = strcat(dname, '\', fname, stringpart);
         disp(strcat('Saving in :', savename))
         savepath_check = savepath;
         new_ver = 2;
@@ -30,12 +31,15 @@ function save_image(recon, bg_sub_fac, diff_limit, datafilepath, format, varargi
 
 %% Scale values appropriatly
         recon = recon + 10; % add offset to accomodate negative values. 
-        if max(recon(:)) < 2^16/500
+        mr = max(recon(:));
+        if mr < 2^16/500
             output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data
-        elseif max(recon(:)) < 2^16/50
+        elseif mr < 2^16/50
             output = uint16(50*recon);
-        elseif max(recon(:)) < 2^16/5
+        elseif mr < 2^16/5
             output = uint16(5*recon);
+        else
+            output = uint16(recon.*(2^16/mr));
         end
         
         

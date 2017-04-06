@@ -1,10 +1,7 @@
-function [ filt_cmat ] = Spat_filt_cmat( cmat, presets, filt_size, filt_fwhm)
+function [ filt_cmat ] = Spat_filt_cmat_conv( cmat, presets, filt_size, filt_fwhm)
 %Takes a cmat as input and filteres is spatially. Very dependent om the
 %cmat2image function
 
-nulls_x = presets.nulls_x;
-nulls_y = presets.nulls_y;
-nulls = nulls_x*nulls_y;
 fr_p_line = sqrt(size(cmat, 2));
 fr_p_column = fr_p_line;
 

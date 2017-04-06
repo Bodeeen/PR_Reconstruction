@@ -34,8 +34,6 @@ nulls_y = ny(end,1);
 By = size_x*size_y;
 Bx = nulls_x*nulls_y;
 
-BG2 = sparse([], [], [], By, Bx, size_x*size_y);
-
 sigma_cent = base_preset(1)/2.355;
 
 pi = 3.1416;
@@ -78,6 +76,11 @@ close(h)
 presets.null_im = null;
 presets.nulls_x = nulls_x;
 presets.nulls_y = nulls_y;
+presets.dx = dx;
+presets.dy = dy;
+presets.dnull = dnull;
+presets.null = null;
+presets.pixel = pixel;
 Ginv = inv(B'*B);
 presets.B = B;
 presets.Ginv = Ginv;
