@@ -9,6 +9,10 @@ else
 end
 cmats = signal_extraction_BandPass(data, presets);
 
+%In case of borde bases causing super strange values
+cmats(cmats > 100*median(cmats(:))) = 100*median(cmats(:));
+cmats(cmats < -100*median(cmats(:))) = -100*median(cmats(:));
+
 if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats, presets);
 end

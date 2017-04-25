@@ -50,9 +50,10 @@ B_cent = sparse([], [], [], By, Bx, By);
 
 
 for i = 1:By
-    B_cent(pixel(i) , null(i)) = g_cent(i);
+    B_cent(pixel(i) , null(i)) = g_cent(i);       
 end
 B = B_cent;
+
 waitbar(1/nr_bases)
 if base_preset(2) ~= 0
     sigma_bg = base_preset(2)/2.355;

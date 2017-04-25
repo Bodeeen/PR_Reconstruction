@@ -26,7 +26,7 @@ for i = file_indexes
     
 end
 
-averaged = mean(stack, 3);
+averaged = uint16(mean(stack, 3));
 
 end
 
