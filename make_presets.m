@@ -52,6 +52,10 @@ B_cent = sparse([], [], [], By, Bx, By);
 for i = 1:By
     B_cent(pixel(i) , null(i)) = g_cent(i);       
 end
+bsum = sum(B_cent, 1);
+for i = 1:Bx
+    B_cent(:,i) = B_cent(:,i)./bsum(i);
+end
 B = B_cent;
 
 waitbar(1/nr_bases)
