@@ -30,7 +30,7 @@ function save_image(recon, bg_sub_fac, cent_g, bg_g, cb, datafilepath, format, v
 %         output = uint16(2^16*output/max(output(:)));
 
 %% Scale values appropriatly
-        recon = recon + 10; % add offset to accomodate negative values. 
+        recon = recon - min(recon(:)); % add offset to accomodate negative values. 
         mr = max(recon(:));
         if mr < 2^16/500
             output = uint16(500*recon); % 500 arbitrarily chosen to fit normal data

@@ -186,13 +186,16 @@ function Load_data_Callback(hObject, eventdata, handles)
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
 filepath = strcat(LoadPathName, LoadFileName);
 handles.data_edit.String = filepath;
-cropping_data = get_cropping_data(filepath);
+spl = strsplit(filepath, '.');
+if strcmp(spl{end}, 'hdf5')
+    cropping_data = get_cropping_data(filepath);
+    handles.cropping_data = cropping_data;
+end
 h = msgbox('This could be a second. Patience...','Importing data','help');
 child = get(h,'Children');
 delete(child(3))
 raw_data = load_image_stack(filepath);
 corrected_raw_data = frame_correction(raw_data);
-handles.cropping_data = cropping_data;
 handles.raw_data = corrected_raw_data;
 update_pattern_id_im(hObject, handles)
 close(h)
@@ -743,8 +746,8 @@ for i = file_indexes
     end
     skew_fac = str2double(handles.skew_fac_edit.String);
     line_px = str2double(handles.line_px_edit.String);
-    cols_p_square = sqrt(handles.nframes);
-    recon = Skew_stripe_corr(skew_fac, line_px, recon, cols_p_square);
+    lines_p_square = sqrt(handles.nframes);
+    recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square);
     if frame == 1
         stack = recon;
     else
@@ -840,8 +843,8 @@ update_recon_im(hObject, handles)
 handles = guidata(hObject);
 skew_fac = str2double(handles.skew_fac_edit.String);
 line_px = str2double(handles.line_px_edit.String);
-cols_p_square = handles.fr_p_line;
-handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, cols_p_square);
+lines_p_square = handles.fr_p_line;
+handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, lines_p_square);
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
 
