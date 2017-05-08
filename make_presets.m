@@ -1,5 +1,5 @@
 %% Returns the distances to the closest pattern maxima of the actual positions xj and yj
-function [presets] = make_presets(imsize, pattern, base_preset)
+function [presets] = make_presets(imsize, pattern, base_preset, ssrot)
 
 % decode the pattern
 fx = pattern(1);
@@ -89,4 +89,5 @@ presets.pixel = pixel;
 Ginv = inv(B'*B);
 presets.B = B;
 presets.Ginv = Ginv;
+presets.ssrot = ssrot;
 end

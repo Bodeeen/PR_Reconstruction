@@ -3,7 +3,7 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
 % contains the signal values over time for a specific focal point.
     nulls_x = presets.nulls_x;
     nulls_y = presets.nulls_y;
-
+    ssrot = presets.ssrot;
     fr_p_line = sqrt(size(cmat, 2));
     fr_p_column = fr_p_line;
     nnulls = nulls_y*nulls_x;
@@ -23,7 +23,9 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
     for i = 1:nnulls
         subsquare = reshape(cmat(i,:), fr_p_line, fr_p_line);
         subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));
-        subsquare = rot90(subsquare,3);
+        %OBS Below rotation is tightly coupled to the rotation in
+        %Spat_filt_cmat_conv!
+        subsquare = rot90(subsquare,ssrot);
         subsquares(:,:,i) = subsquare;
     end
     

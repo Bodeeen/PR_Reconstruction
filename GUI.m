@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 31-Mar-2017 16:06:05
+% Last Modified by GUIDE v2.5 08-May-2017 17:04:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -268,7 +268,8 @@ pattern = handles.pattern;
 if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     dbl_lines = str2double(handles.dbl_lines_edit.String);
     dbl_cols = str2double(handles.dbl_cols_edit.String);
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, dbl_lines, dbl_cols)
+    ssrot = str2double(handles.ssrot_edit.String);
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
@@ -985,3 +986,26 @@ handles = guidata(hObject);
 update_recon_axis(hObject, handles);
 handles = guidata(hObject);
 guidata(hObject, handles);
+
+
+
+function ssrot_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to ssrot_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of ssrot_edit as text
+%        str2double(get(hObject,'String')) returns contents of ssrot_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function ssrot_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ssrot_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

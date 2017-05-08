@@ -1,6 +1,6 @@
 function [ filt_cmat ] = Spat_filt_cmat_LS(cmat)
-%Takes a cmat as input and filteres is spatially. Very dependent om the
-%cmat2image function
+%Takes a cmat as input and filteres is spatially using LS fit to low
+%frequency bases.
 
 ss_side = sqrt(size(cmat, 2));
 

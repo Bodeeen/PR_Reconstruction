@@ -6,7 +6,7 @@ N_bases = size(presets.B, 2)/nnulls;
 nframes = size(cmats, 2);
 
 twostep = 1;
-
+%%Filter the 3rd coefficients spatially
 cmat_bg_filtered = Spat_filt_cmat_LS(cmats(:,:,N_bases));
 
 
@@ -18,11 +18,11 @@ end
 
 
 
-Bbg = presets.B(:, (N_bases-1)*nnulls + 1:end);
-B_new = presets.B(:,1:(N_bases-1)*nnulls);
-Ginv_new = inv(B_new'*B_new);
+Bbg = presets.B(:, (N_bases-1)*nnulls + 1:end); %Bases for 3rd coeffs
+B_new = presets.B(:,1:(N_bases-1)*nnulls); %Bases for 1st and 2nd coeffs
+Ginv_new = inv(B_new'*B_new); %G matrix for 1st and 2nd coeffs
 
-cdual = B_new'*(presets.B*C - Bbg*cmat_bg_filtered);
+cdual = B_new'*(presets.B*C - Bbg*cmat_bg_filtered); %Dual coords of (data - filtered BG)
 clear Bbg
 c = cdual' * Ginv_new;
 c_re = reshape(c, [nframes nnulls N_bases-1]);
@@ -34,7 +34,7 @@ end
 
 if N_bases > 2 && twostep
     
-    cmat_bg_filtered = Spat_filt_cmat_conv(cmats(:,:,N_bases-1), presets, 10, 4);
+    cmat_bg_filtered = Spat_filt_cmat_conv_sqbysq(cmats(:,:,N_bases-1), presets, 6, 3);
 
     C = [];
     for i = 1:N_bases-1

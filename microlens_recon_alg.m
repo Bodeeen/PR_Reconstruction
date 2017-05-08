@@ -1,9 +1,9 @@
-function microlens_recon_alg( hObject, handles, data, imsize, pattern, base_preset, dbl_lines, dbl_cols)
+function microlens_recon_alg( hObject, handles, data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
 %Wrapper function for reconstruction alg with sthlm microlens approach
 
-new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'base_preset', base_preset);
+new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'base_preset', base_preset, 'ssrot', ssrot);
 if ~isfield(handles, 'last_preset_inputs') || ~isequal(new_preset_inputs, handles.last_preset_inputs);
-    presets = make_presets(imsize, pattern, base_preset);
+    presets = make_presets(imsize, pattern, base_preset, ssrot);
 else
     presets = handles.presets;
 end
