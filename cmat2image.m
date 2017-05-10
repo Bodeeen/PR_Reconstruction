@@ -23,7 +23,7 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
     for i = 1:nnulls
         subsquare = reshape(cmat(i,:), fr_p_line, fr_p_line);
         subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));
-        subsquare = rot90(subsquare,2);
+        subsquare = rot90(subsquare,3);
         subsquares(:,:,i) = subsquare;
     end
     
