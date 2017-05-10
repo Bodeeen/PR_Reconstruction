@@ -182,13 +182,16 @@ function Load_data_Callback(hObject, eventdata, handles)
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
 filepath = strcat(LoadPathName, LoadFileName);
 handles.data_edit.String = filepath;
-cropping_data = get_cropping_data(filepath);
+spl = strsplit(filepath, '.');
+if strcmp(spl{end}, 'hdf5')
+    cropping_data = get_cropping_data(filepath);
+    handles.cropping_data = cropping_data;
+end
 h = msgbox('This could be a second. Patience...','Importing data','help');
 child = get(h,'Children');
 delete(child(3))
 raw_data = load_image_stack(filepath);
 corrected_raw_data = frame_correction(raw_data);
-handles.cropping_data = cropping_data;
 handles.raw_data = corrected_raw_data;
 update_pattern_id_im(hObject, handles)
 close(h)
