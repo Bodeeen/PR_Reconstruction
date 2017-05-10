@@ -12,7 +12,7 @@ function [corrected] = Skew_stripe_corr( skew_fac, line_px, im, lines_per_square
     
     
     xi_shifted = 1 + xi - x_shift;
-    yi = 1+ yi;
+    yi = 1 + yi;
     skew_corrected = interp2(im, xi_shifted, yi, 'cubic');  
     skew_corrected(isnan(skew_corrected)) = 0;
     
