@@ -69,13 +69,14 @@ C_im = imresize(C_mat, resize_fac, 'nearest');
 
 corrected_im = C_im .* double(im);
 
-corrected_im_norm = corrected_im - mean(corrected_im(:));
-corrected_im_inv = -corrected_im_norm;
-corrected_im_inv = corrected_im_inv - min(corrected_im_inv(:));
+if mean(sol) < 0
+    corrected_im = -corrected_im;
+end
+corrected_im = corrected_im - min(corrected_im(:));
 
 %%Correct low frew int artifact
 pad = 100;
-corr_padded = padarray(corrected_im_inv, [pad pad], 0);
+corr_padded = padarray(corrected_im, [pad pad], 0);
 org_padded = padarray(im, [pad pad], 0);
 filt = Gaussfilt(size(corr_padded), 0.01);
 corr_ft = fftshift(fft2(corr_padded));
@@ -90,7 +91,7 @@ org_filtered = org_filtered(pad+1:end-pad, pad+1:end-pad);
 corr_fac = org_filtered ./ corr_filtered;
 
 
-corrected_final = corr_fac .* corrected_im_inv;
+corrected_final = corr_fac .* corrected_im;
 
 % [n_up_lines, n_down_lines, n_right_lines, n_left_lines] = make_border_matrices(corrected_im, square_side);
 % figure
