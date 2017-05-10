@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 08-May-2017 17:04:25
+% Last Modified by GUIDE v2.5 10-May-2017 08:50:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -649,9 +649,9 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 
-% --- Executes on button press in chessb_corr_but.
-function chessb_corr_but_Callback(hObject, eventdata, handles)
-% hObject    handle to chessb_corr_but (see GCBO)
+% --- Executes on button press in chessb_corr_but_old.
+function chessb_corr_but_old_Callback(hObject, eventdata, handles)
+% hObject    handle to chessb_corr_but_old (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 im = handles.recon_im;
@@ -1009,3 +1009,19 @@ function ssrot_edit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in chessb_corr_but_new.
+function chessb_corr_but_new_Callback(hObject, eventdata, handles)
+% hObject    handle to chessb_corr_but_new (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.working_text.String = 'Correcting chessboard...'
+im = handles.recon_im;
+im = im - min(im(:));
+square_side = sqrt(handles.nframes);
+corrected = chessboard_correction_LS(im, square_side);
+handles.recon_im = corrected;
+handles.working_text.String = 'Finished correcting chessboard'
+update_recon_axis(hObject, handles)
+guidata(hObject, handles);

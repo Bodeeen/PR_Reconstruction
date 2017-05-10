@@ -67,14 +67,30 @@ assert(resize_fac(1) == resize_fac(2), 'Something strange here')
 resize_fac = resize_fac(1);
 C_im = imresize(C_mat, resize_fac, 'nearest');
 
-corrected_right = C_mat .* right_lines;
-corrected_left = C_mat .* left_lines;
 corrected_im = C_im .* double(im);
 
 corrected_im_norm = corrected_im - mean(corrected_im(:));
 corrected_im_inv = -corrected_im_norm;
+corrected_im_inv = corrected_im_inv - min(corrected_im_inv(:));
 
-corrected_final = corrected_im_inv;
+%%Correct low frew int artifact
+pad = 100;
+corr_padded = padarray(corrected_im_inv, [pad pad], 0);
+org_padded = padarray(im, [pad pad], 0);
+filt = Gaussfilt(size(corr_padded), 0.01);
+corr_ft = fftshift(fft2(corr_padded));
+org_ft = fftshift(fft2(org_padded));
+corr_ft_filtered = corr_ft.*filt;
+org_ft_filtered = org_ft.*filt;
+corr_filtered = real(ifft2(ifftshift(corr_ft_filtered)));
+org_filtered = real(ifft2(ifftshift(org_ft_filtered)));
+corr_filtered = corr_filtered(pad+1:end-pad, pad+1:end-pad);
+org_filtered = org_filtered(pad+1:end-pad, pad+1:end-pad);
+
+corr_fac = org_filtered ./ corr_filtered;
+
+
+corrected_final = corr_fac .* corrected_im_inv;
 
 % [n_up_lines, n_down_lines, n_right_lines, n_left_lines] = make_border_matrices(corrected_im, square_side);
 % figure
