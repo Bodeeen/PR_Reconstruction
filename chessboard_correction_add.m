@@ -22,8 +22,8 @@ for y = 1:cy
         RtLcorr_factors_x(y,x) = left_lines(y,x+1) + RtLcorr_factors_x(y,x+1) - right_lines(y,x);
     end
 end
-[y x] = ndgrid(0:1/(cy-1):1, 0:1/(cx-1):1);
-B_dir_corr_fac_x = x.*RtLcorr_factors_x + (1-x).*LtRcorr_factors_x;
+[yj xj] = ndgrid(0:1/(cy-1):1, 0:1/(cx-1):1);
+B_dir_corr_fac_x = xj.*RtLcorr_factors_x + (1-xj).*LtRcorr_factors_x;
 
 corr_im_x = imresize(B_dir_corr_fac_x, square_side, 'nearest');
 
@@ -45,25 +45,7 @@ kern = kern ./ sum(kern(:));
 for i = 1:size(corr, 1);
     corr_filt(i,:) = filtfilt(b1, a1, corr(i,:)); 
 end
-% corr_filt = conv2(corr, kern, 'same');
-% figure
-% subplot(1,3,1)
-% plot(corr(1,:))
-% subplot(1,3,2)
-% plot(corr_filt1)
-% subplot(1,3,3)
-% plot(corr_filt(1,:))
 
-
-
-%%Correct for edge problem at right edge of corr_filt
-% q = ceil(k_size/2);
-% p = (im_x - q);
-% for y = 1:cy
-%     for x = p:im_x
-%         corr_filt(y,x) = mean(corr(y,x-q:im_x));
-%     end
-% end
 
 corr_im = zeros(im_y, im_x);
 
@@ -85,12 +67,22 @@ for x = 1:im_x
     end
 end
 
-UtDcorr_im = zeros(im_y, im_x);
+DtUcorr_factors = zeros(cy, im_x);
+for x = 1:im_x
+    for y = cy-1:-1:1;
+        DtUcorr_factors(y,x) = up_lines(y+1,x) + DtUcorr_factors(y+1,x) - down_lines(y,x);
+    end
+end
+
+[yj xj] = ndgrid(0:1/(cy-1):1, 0:1/(im_x-1):1);
+B_dir_corr_fac_y = UtDcorr_factors;%yj.*DtUcorr_factors + (1-yj).*UtDcorr_factors;
+
+Ycorr_im = zeros(im_y, im_x);
 
 for x = 1:im_x
     for y = 1:im_y
         yi = ceil(y/square_side);
-        UtDcorr_im(y,x) = UtDcorr_factors(yi,x);
+        Ycorr_im(y,x) = B_dir_corr_fac_y(yi,x);
     end
 end
 
@@ -102,7 +94,7 @@ k_size = square_side;
 % filtered_y = conv2(UtDcorr_im, kern_y, 'same');
 filtered_y = zeros(size(im));
 for i = 1:size(im, 2)
-    filtered_y(:,i) = filtfilt(b1, a1, UtDcorr_im(:,i));
+    filtered_y(:,i) = filtfilt(b1, a1, Ycorr_im(:,i));
 end
 
 % q = ceil(k_size/2);
@@ -114,9 +106,9 @@ end
 % end
 
 %%Filter in x-dim
-corr_im_y = UtDcorr_im - filtered_y;
+corr_im_y = Ycorr_im - filtered_y;
 filtered_corr_im_y = zeros(size(im));
-[b2, a2] = butter(5,0.03,'low');
+[b2, a2] = butter(5,0.01,'low');
 for i = 1:size(im, 1)
     filtered_corr_im_y(i,:) = filtfilt(b2, a2, corr_im_y(i,:));
 end
