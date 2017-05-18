@@ -4,6 +4,7 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
     nulls_x = presets.nulls_x;
     nulls_y = presets.nulls_y;
     ssrot = presets.ssrot;
+    flip_ss = presets.flip_ss;
     fr_p_line = sqrt(size(cmat, 2));
     fr_p_column = fr_p_line;
     nnulls = nulls_y*nulls_x;
@@ -26,6 +27,9 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
         %OBS Below rotation is tightly coupled to the rotation in
         %Spat_filt_cmat_conv!
         subsquare = rot90(subsquare,ssrot);
+        if flip_ss
+            subsquare = fliplr(subsquare);
+        end
         subsquares(:,:,i) = subsquare;
     end
     

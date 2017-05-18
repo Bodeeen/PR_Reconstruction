@@ -11,6 +11,7 @@ padsize = ceil(filt_size/2);
 
 im = cmat2image(cmat, presets, 0, 0);
 ssrot = presets.ssrot;
+flip_ss = presets.flip_ss;
 filt_cmat = zeros(size(cmat));
 i = 1;
 for tlpx = 1:fr_p_line:size(im, 2)
@@ -19,6 +20,9 @@ for tlpx = 1:fr_p_line:size(im, 2)
        padded = padarray(subsquare, [padsize padsize], 'replicate', 'both');
        filtered = conv2(padded, kern, 'same');
        filtered = filtered(padsize+1:padsize+fr_p_line, padsize+1:padsize+fr_p_column);
+       if flip_ss
+           filtered = fliplr(filtered);
+       end
        subsquare = rot90(filtered, -ssrot);
        subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));
        ssvec = reshape(subsquare, [1, fr_p_column*fr_p_line]);

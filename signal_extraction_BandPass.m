@@ -42,6 +42,10 @@ cmats = zeros(nnulls,nframes, N_bases);
 f = reshape(data, [size_y*size_x nframes]);
 
 cdual = B' * double(f);
+if presets.simp_pin
+    cmats = cdual;
+    return
+end
 c = cdual' * Ginv;
 c_re = reshape(c, [nframes nnulls N_bases]);
 cmats = zeros(nnulls, nframes, N_bases);

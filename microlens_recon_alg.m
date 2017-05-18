@@ -1,17 +1,17 @@
-function microlens_recon_alg( hObject, handles, data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
+function microlens_recon_alg( hObject, handles, data, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
 %Wrapper function for reconstruction alg with sthlm microlens approach
 
-new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'base_preset', base_preset, 'ssrot', ssrot);
+new_preset_inputs = struct('imsize', imsize, 'pattern', pattern, 'base_preset', base_preset, 'ssrot', ssrot, 'flip_ss', flip_ss, 'norm_g', simp_pin);
 if ~isfield(handles, 'last_preset_inputs') || ~isequal(new_preset_inputs, handles.last_preset_inputs);
-    presets = make_presets(imsize, pattern, base_preset, ssrot);
+    presets = make_presets(imsize, pattern, base_preset, ssrot, flip_ss, simp_pin);
 else
     presets = handles.presets;
 end
 cmats = signal_extraction_BandPass(data, presets);
 
 %In case of border bases causing super strange values
-cmats(cmats > 100*median(cmats(:))) = 100*median(cmats(:));
-cmats(cmats < -100*median(cmats(:))) = -100*median(cmats(:));
+% cmats(cmats > 100*median(cmats(:))) = 100*median(cmats(:));
+% cmats(cmats < -100*median(cmats(:))) = -100*median(cmats(:));
 
 if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats, presets);

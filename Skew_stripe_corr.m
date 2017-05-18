@@ -1,5 +1,10 @@
-function [corrected] = Skew_stripe_corr( skew_fac, line_px, im, lines_per_square)
+function [corrected] = Skew_stripe_corr( skew_fac, line_px, im, lines_per_square, rot)
 %Corrects image for stripe and skew artifact.
+%rot indicates if the image (thus subsquares) should be rotated before
+%correction (depends on scan rotation)
+    if rot
+        im = rot90(im);
+    end
     imsize_x = size(im, 2);
     imsize_y = size(im, 1);
     % Skew correction
@@ -34,6 +39,9 @@ function [corrected] = Skew_stripe_corr( skew_fac, line_px, im, lines_per_square
     shifted_im = skew_corrected;
     shifted_im(:,selection_bool) = shifted_selection;
     corrected = shifted_im;
+    if rot
+        corrected = rot90(corrected, 3);
+    end
 
 end
 

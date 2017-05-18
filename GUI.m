@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 10-May-2017 08:50:31
+% Last Modified by GUIDE v2.5 17-May-2017 18:42:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -269,7 +269,9 @@ if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
     dbl_lines = str2double(handles.dbl_lines_edit.String);
     dbl_cols = str2double(handles.dbl_cols_edit.String);
     ssrot = str2double(handles.ssrot_edit.String);
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
+    flip_ss = handles.flip_subsq_cb.Value;
+    simp_pin = handles.simp_pin_cb.Value;
+    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
     handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
 else
     if handles.bleach_corr_check.Value
@@ -717,10 +719,11 @@ for i = file_indexes
     raw_data = load_image_stack(filepath);
     corrected_raw_data = frame_correction(raw_data);
     imsize = size(corrected_raw_data);
+    ssrot = str2double(handles.ssrot_edit.String);
     if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
         dbl_lines = str2double(handles.dbl_lines_edit.String);
         dbl_cols = str2double(handles.dbl_cols_edit.String);
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, dbl_lines, dbl_cols)
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
@@ -748,7 +751,8 @@ for i = file_indexes
     skew_fac = str2double(handles.skew_fac_edit.String);
     line_px = str2double(handles.line_px_edit.String);
     lines_p_square = sqrt(handles.nframes);
-    recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square);
+    recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square, handles.rotate_skewstripe_cb.Value);
+%     recon = chessboard_correction_add(recon, lines_p_square);
     if frame == 1
         stack = recon;
     else
@@ -845,7 +849,7 @@ handles = guidata(hObject);
 skew_fac = str2double(handles.skew_fac_edit.String);
 line_px = str2double(handles.line_px_edit.String);
 lines_p_square = handles.fr_p_line;
-handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, lines_p_square);
+handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, lines_p_square, handles.rotate_skewstripe_cb.Value);
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
 
@@ -1025,3 +1029,30 @@ handles.recon_im = corrected;
 handles.working_text.String = 'Finished correcting chessboard'
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
+
+
+% --- Executes on button press in rotate_skewstripe_cb.
+function rotate_skewstripe_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to rotate_skewstripe_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of rotate_skewstripe_cb
+
+
+% --- Executes on button press in flip_subsq_cb.
+function flip_subsq_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to flip_subsq_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of flip_subsq_cb
+
+
+% --- Executes on button press in simp_pin_cb.
+function simp_pin_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to simp_pin_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of simp_pin_cb

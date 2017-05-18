@@ -62,7 +62,7 @@ ex0 = mod((ref_phx - phx) / (2 * pi), 1) * efx;
 ey0 = mod((ref_phy - phy) / (2 * pi), 1) * efy;
 
 %% High pass filter data image
-im = double(im);
+im = double(im - min(im(:)));
 ft = fftshift(fft2(im));
 [yf, xf] = ndgrid(1:dims(1), 1: dims(2));
 yf = yf - dims(1)/2;
@@ -95,7 +95,7 @@ function corr = minimizer(x)
     ref = cos(pi * (xi - x(2)) / x(1)).^2 .* cos(pi * (yi - x(4)) / x(3)).^2;
     % correlation
     corr = ref .* im;
-    corr = mean(corr(:));
+    corr = sum(corr(:));
     corr = -corr;
 end
 

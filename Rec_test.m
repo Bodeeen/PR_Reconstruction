@@ -3,7 +3,7 @@ cmat = zeros(100,2);
 N = 1000
 x = 1:N;
 
-ifsignal = ones(1,N);%sin(x/2);
+ifsignal = sin(x/2);
 oofsignal = ones(1,N);%sin(x/20);
 
 

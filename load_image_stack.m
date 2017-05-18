@@ -15,7 +15,7 @@ if strcmp(format,'tif') || strcmp(format, 'tiff')
     end
 %     stack = sum(stack, 3);
     stack = rot90(flipud(stack), -1);
-elseif strcmp(format, 'hdf5')
+elseif strcmp(format, 'hdf5') || strcmp(format, 'h5')
 %%HDF5
     stack = hdf5read(path, 'data');
 end

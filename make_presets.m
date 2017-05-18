@@ -1,5 +1,5 @@
 %% Returns the distances to the closest pattern maxima of the actual positions xj and yj
-function [presets] = make_presets(imsize, pattern, base_preset, ssrot)
+function [presets] = make_presets(imsize, pattern, base_preset, ssrot, flip_ss, simp_pin)
 
 % decode the pattern
 fx = pattern(1);
@@ -53,9 +53,12 @@ for i = 1:By
     B_cent(pixel(i) , null(i)) = g_cent(i);       
 end
 bsum = sum(B_cent, 1);
-for i = 1:Bx
-    B_cent(:,i) = B_cent(:,i)./bsum(i);
+if simp_pin
+    for i = 1:Bx
+        B_cent(:,i) = B_cent(:,i)./bsum(i);
+    end
 end
+
 B = B_cent;
 
 waitbar(1/nr_bases)
@@ -90,4 +93,6 @@ Ginv = inv(B'*B);
 presets.B = B;
 presets.Ginv = Ginv;
 presets.ssrot = ssrot;
+presets.flip_ss = flip_ss;
+presets.simp_pin = simp_pin;
 end
