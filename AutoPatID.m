@@ -86,9 +86,14 @@ lb = [efx - 0.2, -Inf, efy - 0.2, -Inf];
 ub = [efx + 0.2, Inf, efy + 0.2, Inf];
 
 % we use fmincon for maximizing correlation of calculated pattern and addup
-options = optimset('Display', 'off', 'UseParallel', 'never', 'Algorithm', 'active-set');
+% options = optimset('Display', 'off', 'UseParallel', 'never', 'Algorithm', 'active-set');
+% x = fmincon(@minimizer, double(x0), [], [], [], [], lb, ub, [], options);
 
-x = fmincon(@minimizer, double(x0), [], [], [], [], lb, ub, [], options);
+options = [];
+options.display = 'none';
+options.maxFunEvals = 100;
+options.numDiff = 2;
+x = minFunc(@minimizer, x0', options);
 
 function corr = minimizer(x)
     % pattern
