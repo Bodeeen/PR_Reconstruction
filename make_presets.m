@@ -72,11 +72,13 @@ if base_preset(2) ~= 0
     B = [B BG1];
 end
 waitbar(2/nr_bases)
+%Make constant bg (this is also used to error calculation which is why it
+%is always created.
+BG2 = sparse([], [], [], By, Bx, size_x*size_y);
+for i = 1:numel(xi)
+    BG2(pixel(i) , null(i)) = 1;
+end
 if base_preset(3) ~= 0
-    BG2 = sparse([], [], [], By, Bx, size_x*size_y);
-    for i = 1:numel(xi)
-        BG2(pixel(i) , null(i)) = 1;
-    end
     B = [B BG2];
 end
 waitbar(3/nr_bases)
@@ -91,6 +93,7 @@ presets.null = null;
 presets.pixel = pixel;
 Ginv = inv(B'*B);
 presets.B = B;
+presets.SS_const_base = BG2;
 presets.Ginv = Ginv;
 presets.ssrot = ssrot;
 presets.flip_ss = flip_ss;

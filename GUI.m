@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 17-May-2017 18:42:25
+% Last Modified by GUIDE v2.5 22-May-2017 13:53:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -505,11 +505,20 @@ end
 
 function update_recon_axis(hObject, handles)
 if isfield(handles, 'recon_im')
-    im = handles.recon_im;
-    l_lim = handles.low_lim_slider.Value * max(handles.recon_im(:)) + (1 - handles.low_lim_slider.Value) * min(handles.recon_im(:));
-    u_lim = handles.up_lim_slider.Value * max(handles.recon_im(:))  + (1 - handles.up_lim_slider.Value) * min(handles.recon_im(:));
+    if handles.Sh_err_im_cb.Value
+        im = handles.Error_im;
+    else
+        im = handles.recon_im;
+    end
+    if handles.hide_frame_cb.Value
+        im = im(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line);
+    end
+    handles.showing_im = im;
+    l_lim = handles.low_lim_slider.Value * max(im(:)) + (1 - handles.low_lim_slider.Value) * min(im(:));
+    u_lim = handles.up_lim_slider.Value * max(im(:))  + (1 - handles.up_lim_slider.Value) * min(im(:));
     axes(handles.recon_axis);
     imshow(im, [min(l_lim, u_lim) max(l_lim, u_lim)]);
+    guidata(hObject, handles);
 end
     
 % --- Executes on button press in bleach_corr_check.
@@ -553,12 +562,12 @@ filepath = handles.data_edit.String;
 
 slider_val = handles.slider.Value;
 cent_g = str2double(handles.pinhole_edit.String);
-bg_g = str2double(handles.BGFWHM_edit.String);
+bg_g = handles.BG_FWHM_check.Value * str2double(handles.BGFWHM_edit.String);
 cb = handles.Const_bg_check.Value;
 if isfield(handles, 'wf_im')
-    save_image(handles.recon_im, slider_val, cent_g, bg_g, cb, filepath, 'tif', 'widefield', handles.wf_im);
+    save_image(handles.showing_im, slider_val, cent_g, bg_g, cb, filepath, 'tif', 'widefield', handles.wf_im);
 else
-    save_image(handles.recon_im, slider_val, cent_g, bg_g, cb, filepath, 'tif');
+    save_image(handles.showing_im, slider_val, cent_g, bg_g, cb, filepath, 'tif');
 end
 
 % --- Executes on selection change in WF_recon_mode.
@@ -1056,3 +1065,21 @@ function simp_pin_cb_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of simp_pin_cb
+
+
+% --- Executes on button press in Sh_err_im_cb.
+function Sh_err_im_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to Sh_err_im_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+update_recon_axis(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of Sh_err_im_cb
+
+
+% --- Executes on button press in hide_frame_cb.
+function hide_frame_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to hide_frame_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+update_recon_axis(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of hide_frame_cb

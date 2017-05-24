@@ -7,11 +7,13 @@ if ~isfield(handles, 'last_preset_inputs') || ~isequal(new_preset_inputs, handle
 else
     presets = handles.presets;
 end
-cmats = signal_extraction_BandPass(data, presets);
-
+[cmats, Ecmats] = signal_extraction_BandPass(data, presets);
+if ~presets.simp_pin
+    handles.Error_im = cmat2image(Ecmats, presets, 0, 0);
+end
 %In case of border bases causing super strange values
-% cmats(cmats > 100*median(cmats(:))) = 100*median(cmats(:));
-% cmats(cmats < -100*median(cmats(:))) = -100*median(cmats(:));
+cmats(cmats > 100*median(cmats(:))) = 0;%10*median(cmats(:));
+cmats(cmats < -100*median(cmats(:))) = 0;%-10*median(cmats(:));
 
 if handles.bleach_corr_check.Value
     cmats = cmats_bleach_corr(cmats, presets);
