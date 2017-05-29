@@ -1,45 +1,45 @@
 function rec = Make_simulated_data( WF_R, OP_p )
-
-%% Make simulated MF-RESOLFT data
+% Make simulated RESOLFT data, input variable WF_R determines WF-RESOLFT
+% mode (true) or MF/SP-RESOLFT mode (false). OP_p determines Off-pattern
+% periodicity
 
 %% Set parameters of simulation
 size_x = 10000;
 size_y = 10000;
 size_z = 4000;
-px_size = 32.5;
+vx_size = 20; %Voxel side of the initial data volume 
 
-step_size = 25;
-uL_p = 750;
-% OP_p = 320;
-
-% WF_R = true;
+step_size = 25; %Step size of scan
+uL_p = 750; % uLens periodicity
 
 px_size_out = 65;
 
 act_sat_fac = 2; %2 here Gives 86% activation
 off_sat_fac = 10;
-off_switch_bg_lvl = 0.1;
+off_switch_bg_lvl = 0.05;
 ro_sat_fac = 2;% 2 here Gives 86% read_out
-bg_fluorescence = 0.1; %Bg fluorescence is 10% of "structure fluorescence"
+bg_fluorescence = 0.01; %Bg fluorescence is 10% of "structure fluorescence"
 
 %% Make ndgrids, x-1 and y-1 is used to ease later construction of rec matrix
 %z-1 is not used because we want a true z = 0 plane.
-[yi, xi, zi] = ndgrid(-(size_x-1)/2:px_size:(size_x-1)/2, -(size_y-1)/2:px_size:(size_y-1)/2, -(size_z)/2:px_size:(size_z)/2);
+[yi, xi, zi] = ndgrid(-(size_x-1)/2:vx_size:(size_x-1)/2, -(size_y-1)/2:vx_size:(size_y-1)/2, -(size_z)/2:vx_size:(size_z)/2);
 
-s0xy = 185/2.355;
-s0z = 460/2.355;
+s0xy = 185/2.355; %Sigma of excitation PSF in xy where z = 0
+s0z = 460/2.355;    % Sigma of excitation PSF in z where x=y=0
 detPSFxy0 = 220/2.355; %Sigma of detection PSF in xy where z = 0
 detPSFz0 = 520/2.355; %Sigma of detection PSF in z where x=y=0
 
-z_decay_ex = exp(-zi.^2/(2*s0z^2));
-z_decay_det = exp(-zi.^2/(2*detPSFz0^2));
+z_decay_ex = exp(-zi.^2/(2*s0z^2)); % Decay of intensity along Z-axis of the excitation light
+z_decay_det = exp(-zi.^2/(2*detPSFz0^2)); % Decay of intensity along Z-axis of the detection PSF
 
 if WF_R
-    scan_size = OP_p;
+    scan_size = OP_p; % In WF-RESOLFT mode, scan_size equals Off-pattern periodicity.
 else
-    scan_size = uL_p;
+    scan_size = uL_p; % In MF/SP-RESOLFT mode, scan_size equals uL-pattern periodicity.
     assert(mod(uL_p, OP_p) == 0, 'Off pattern and microlens pattern does not match!')
 end
+
+%Correct so that scan_size is a multiple of step_size
 if(round(scan_size/step_size) ~= scan_size/step_size)
        warning('Step size corrected!')
        steps = round(OP_p/step_size);
@@ -71,49 +71,53 @@ RO = Act;
 
 %Make OFF-switching pattern
 OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi))));
+
 %% Make GT volume
 gt = bg_fluorescence*ones(size(xi));
 fp = zeros(size(xi, 1), size(xi,2));
 row = 1;
-step = 1;
+step = 0;
 while row < size(xi,1)
     fp(row,:) = 1;
-    step = step+1;
-    row = row + step;
+    step = step+0.5;
+    row = row + round(100/vx_size * (2+sin(step)));
 end
 k = 0.1;
 foc_z = ceil(size(xi,3)/2);
 gt(:,:,foc_z) = fp;
-% for x = 1 : size(xi, 2)
-%     z = ceil(size(xi,3)/2) + round(x*k);
-%     if z > size(xi, 3)
-%         break
-%     end
-%     gt(:, x, z) = fp(x,:);
-% end
-z_step_nm = 200;
-z_step_px = round(z_step_nm / px_size);
+
+z_step_nm = 300;
+z_step_px = round(z_step_nm / vx_size);
 rot_step = 1;
 rot_ang = 10;
 for z = foc_z + z_step_px:z_step_px:size(xi,3)
     gt(:,:,z) = imrotate(fp, rot_step*rot_ang, 'crop');
     rot_step = rot_step + 1;
 end
-gt = gpuArray(imrotate(gt, 30, 'crop'));
-% gt = imrotate(gt, 30, 'crop');
-%%
-%%Make data
+rot_step = -1;
+for z = foc_z - z_step_px:-z_step_px:1
+    gt(:,:,z) = imrotate(fp, rot_step*rot_ang, 'crop');
+    rot_step = rot_step - 1;
+end
+% gt = gpuArray(imrotate(gt, 30, 'crop'));
+gt = imrotate(gt, 30, 'crop');
 
-Act_fac = gpuArray(1 - exp(-act_sat_fac .* Act));
-Off_fac = gpuArray(off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP));
-RO_fac = gpuArray(1 - exp(-ro_sat_fac .* RO));
+%% Make data
+
+% Act_fac = gpuArray(1 - exp(-act_sat_fac .* Act));
+% Off_fac = gpuArray(off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP));
+% RO_fac = gpuArray(1 - exp(-ro_sat_fac .* RO));
+
+Act_fac = 1 - exp(-act_sat_fac .* Act);
+Off_fac = off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP);
+RO_fac = 1 - exp(-ro_sat_fac .* RO);
 
 steps = scan_size / step_size;
 [yj, xj, zj] = ndgrid(1:size(xi, 1), 1:size(xi,2), 1:size(xi,3));
-step_size_px = step_size/px_size;
-scan_size_px = scan_size/px_size;
+step_size_px = step_size/vx_size;
+scan_size_px = scan_size/vx_size;
 
-test = imresize(xi,px_size/px_size_out);
+test = imresize(xi,vx_size/px_size_out);
 
 rec = zeros(size(test, 1), size(test, 2), steps^2);
 
@@ -123,7 +127,7 @@ for i = 1:size(ft_diff_lim_kerns,3)
     diff_lim_kern = diff_lim_kern ./ sum(diff_lim_kern(:));
     ft_diff_lim_kerns(:,:,i) = fftshift(fft2(diff_lim_kern));
 end
-ft_diff_lim_kerns = gpuArray(ft_diff_lim_kerns);
+% ft_diff_lim_kerns = gpuArray(ft_diff_lim_kerns);
 step = 1;
 b_or_f = 1; %Back and forth mem var
 h = waitbar(0, 'Simulating...');
@@ -138,15 +142,15 @@ for dx = step_size_px/2:step_size_px:scan_size_px - step_size_px/2
         Em = scan_data .* Act_fac .* Off_fac .* RO_fac;
         
         if size(Em) == size(test)
-            Em_resizedGPU = Em;
+            Em_resized = Em;
         else
-            Em_resizedGPU = imresize(Em, px_size/px_size_out);
-            Em_resizedGPU(isnan(Em_resizedGPU)) = 0;
+            Em_resized = imresize(Em, vx_size/px_size_out);
+            Em_resized(isnan(Em_resized)) = 0;
         end
         
         for z = 1:size(xi,3);
-            Blurred = ifft2(ifftshift(abs(ft_diff_lim_kerns(:,:,z)).*fftshift(fft2(Em_resizedGPU(:,:,z)))));
-            rec(:,:,step) = rec(:,:,step) + gather(real(Blurred));
+            Blurred = ifft2(ifftshift(abs(ft_diff_lim_kerns(:,:,z)).*fftshift(fft2(Em_resized(:,:,z)))));
+            rec(:,:,step) = rec(:,:,step) + real(Blurred);
         end
         step = step + 1;
     end

@@ -295,6 +295,7 @@ end
 update_recon_im(hObject, handles)
 handles = guidata(hObject);
 update_recon_axis(hObject, handles)
+handles = guidata(hObject);
 handles.working_text.String = 'Finished!'
 guidata(hObject, handles);
 
@@ -1042,6 +1043,7 @@ corrected = chessboard_correction_LS(im, square_side);
 handles.recon_im = corrected;
 handles.working_text.String = 'Finished correcting chessboard'
 update_recon_axis(hObject, handles)
+handles = guidata(hObject);
 guidata(hObject, handles);
 
 
@@ -1078,6 +1080,7 @@ function Sh_err_im_cb_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 update_recon_axis(hObject, handles);
+guidata(hObject, handles)
 % Hint: get(hObject,'Value') returns toggle state of Sh_err_im_cb
 
 
@@ -1087,4 +1090,5 @@ function hide_frame_cb_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 update_recon_axis(hObject, handles);
+guidata(hObject, handles)
 % Hint: get(hObject,'Value') returns toggle state of hide_frame_cb
