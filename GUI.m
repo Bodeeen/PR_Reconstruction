@@ -248,57 +248,8 @@ function run_reconstruction_Callback(hObject, eventdata, handles)
 % hObject    handle to run_reconstruction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.working_text.String = 'Reconstructing image...'
-data = handles.raw_data;
-if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
-    data = HP_correct(data, handles.HPC_im);
-end
-handles.nframes = size(data, 3);
+run_reconstruction(hObject, eventdata, handles);
 
-base_preset = [0 0 0];
-base_preset(1) = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
-if handles.BG_FWHM_check.Value
-    base_preset(2) = str2double(handles.BGFWHM_edit.String) / str2double(handles.pixel_size_edit.String);
-end
-if handles.Const_bg_check.Value
-    base_preset(3) = 1;
-end
-
-imsize = size(data);
-pattern = handles.pattern;
-if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
-    dbl_lines = str2double(handles.dbl_lines_edit.String);
-    dbl_cols = str2double(handles.dbl_cols_edit.String);
-    ssrot = str2double(handles.ssrot_edit.String);
-    flip_ss = handles.flip_subsq_cb.Value;
-    simp_pin = handles.simp_pin_cb.Value;
-    microlens_recon_alg(hObject, handles, data, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
-    handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
-else
-    if handles.bleach_corr_check.Value
-        data = bleaching_correction(data, 'Additive');
-    end
-    camera_pixel = str2double(handles.pixel_size_edit.String);
-    objp = 20 / camera_pixel; %I think 20 is output pixel size
-    number_scanning_steps = sqrt(size(data,3)) - 1;
-    shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
-    pinhole_size = str2double(handles.pinhole_edit.String);
-    recon_gauss = str2double(handles.ReconGaussSize.String);
-    if pinhole_size == recon_gauss
-        [central_signal bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
-    else
-        [central_signal bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
-    end
-    handles.central_signal = central_signal;
-    handles.bg_signal = bg_signal;
-end
-
-update_recon_im(hObject, handles)
-handles = guidata(hObject);
-update_recon_axis(hObject, handles)
-handles = guidata(hObject);
-handles.working_text.String = 'Finished!'
-guidata(hObject, handles);
 
 
 % --- Executes on button press in find_pattern.
@@ -314,35 +265,6 @@ function find_pat_man_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 find_pattern(hObject, eventdata, handles, 'man')
-
-
-% --- Executes on button press in find_pat_man.
-function find_pattern(hObject, eventdata, handles, method)
-% hObject    handle to find_pat_man (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-expected_period_px = handles.expected_period / str2double(handles.pixel_size_edit.String);
-pattern_id_im = handles.pattern_id_im;
-if strcmp(method, 'auto')
-    pattern = AutoPatID( pattern_id_im, expected_period_px )
-elseif strcmp(method, 'man')
-    pattern = pattern_identification( pattern_id_im, expected_period_px )
-end
-handles.pattern = pattern;
-grid_vectors = make_pattern_grid(pattern, size(pattern_id_im));
-scale = 10;
-axes(handles.pattern_axis);
-imshow(imresize(pattern_id_im, scale), []);
-hold on
-%We add scale/2 because an offset 4 in original image means the
-%maximum is located on the center of pixel 4 i.e. between the pix3-pix4
-%edge and pix4-pix5 edge. In the upsampled version, the aforementioned
-%edges are at pix30-pix31 and pix40-pix41. The maximum is thus at
-%pix35-pix36.
-plot(scale*grid_vectors.x_vec - scale/2, scale*grid_vectors.y_vec - scale/2, 'x')
-hold off
-guidata(hObject, handles)
-
 
 
 function ulens_period_edit_Callback(hObject, eventdata, handles)
@@ -498,35 +420,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function update_recon_im(hObject, handles)
-if isfield(handles, 'central_signal')
-    axes(handles.recon_axis);
-    slider_val = handles.slider.Value;
-    if handles.show_denoised_check.Value && isfield(handles, 'central_signal_ncorr')
-        handles.recon_im = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
-    else
-        handles.recon_im = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
-    end
-    guidata(hObject, handles);
-end
-
-function update_recon_axis(hObject, handles)
-if isfield(handles, 'recon_im')
-    if handles.Sh_err_im_cb.Value
-        im = handles.Error_im;
-    else
-        im = handles.recon_im;
-    end
-    if handles.hide_frame_cb.Value
-        im = im(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line);
-    end
-    handles.showing_im = im;
-    l_lim = handles.low_lim_slider.Value * max(im(:)) + (1 - handles.low_lim_slider.Value) * min(im(:));
-    u_lim = handles.up_lim_slider.Value * max(im(:))  + (1 - handles.up_lim_slider.Value) * min(im(:));
-    axes(handles.recon_axis);
-    imshow(im, [min(l_lim, u_lim) max(l_lim, u_lim)]);
-    guidata(hObject, handles);
-end
     
 % --- Executes on button press in bleach_corr_check.
 function bleach_corr_check_Callback(hObject, eventdata, handles)
