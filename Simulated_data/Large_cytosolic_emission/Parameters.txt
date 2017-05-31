@@ -1,5 +1,0 @@
-act_sat_fac = 2; %2 here Gives 86% activation
-off_sat_fac = 10;
-off_switch_bg_lvl = 0.1;
-ro_sat_fac = 2;% 2 here Gives 86% read_out
-bg_fluorescence = 0.1; %Bg fluorescence is 10% of "structure fluorescence"

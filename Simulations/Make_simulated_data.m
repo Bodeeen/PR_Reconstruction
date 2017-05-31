@@ -14,10 +14,10 @@ uL_p = 750; % uLens periodicity
 
 px_size_out = 65;
 
-act_sat_fac = 2; %2 here Gives 86% activation
-off_sat_fac = 10;
-off_switch_bg_lvl = 0.05;
-ro_sat_fac = 2;% 2 here Gives 86% read_out
+act_E = 2; %2 here Gives 86% activation
+off_E = 10;
+bg = 0.05;
+ro_E = 2;% 2 here Gives 86% read_out
 bg_fluorescence = 0.01; %Bg fluorescence is 10% of "structure fluorescence"
 
 %% Make ndgrids, x-1 and y-1 is used to ease later construction of rec matrix
@@ -74,7 +74,7 @@ OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi)))
 
 %% Make GT volume
 gt = bg_fluorescence*ones(size(xi));
-fp = zeros(size(xi, 1), size(xi,2));
+fp = bg_fluorescence*ones(size(xi, 1), size(xi,2));
 row = 1;
 step = 0;
 while row < size(xi,1)
@@ -108,9 +108,9 @@ gt = imrotate(gt, 30, 'crop');
 % Off_fac = gpuArray(off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP));
 % RO_fac = gpuArray(1 - exp(-ro_sat_fac .* RO));
 
-Act_fac = 1 - exp(-act_sat_fac .* Act);
-Off_fac = off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP);
-RO_fac = 1 - exp(-ro_sat_fac .* RO);
+Act_fac = 1 - exp(-act_E .* Act);
+Off_fac = bg + (1-bg)*exp(-off_E .* OP);
+RO_fac = (bg-1)*exp(-ro_E .* RO) + bg*(-ro_E .* RO) + 1 - bg;
 
 steps = scan_size / step_size;
 [yj, xj, zj] = ndgrid(1:size(xi, 1), 1:size(xi,2), 1:size(xi,3));
