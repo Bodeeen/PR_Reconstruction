@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 22-May-2017 13:53:47
+% Last Modified by GUIDE v2.5 31-May-2017 14:27:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -370,7 +370,7 @@ function slider_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-sliderValue = get(handles.slider,'Value')
+sliderValue = get(handles.slider,'Value');
 set(handles.bg_sub_edit,'String', num2str(sliderValue))
 
 handles = guidata(hObject);
@@ -565,10 +565,10 @@ function chessb_corr_but_old_Callback(hObject, eventdata, handles)
 % hObject    handle to chessb_corr_but_old (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-im = handles.recon_im;
+im = handles.showing_im;
 square_side = sqrt(handles.nframes);
 corrected = chessboard_correction_old(im, square_side);
-handles.recon_im = corrected;
+handles.showing_im = corrected;
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
 
@@ -632,7 +632,9 @@ for i = file_indexes
     if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
         dbl_lines = str2double(handles.dbl_lines_edit.String);
         dbl_cols = str2double(handles.dbl_cols_edit.String);
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, ssrot, dbl_lines, dbl_cols)
+        flip_ss = handles.flip_subsq_cb.Value;
+        simp_pin = handles.simp_pin_cb.Value;
+        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
         handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
     else
         if handles.bleach_corr_check.Value
@@ -661,12 +663,14 @@ for i = file_indexes
     line_px = str2double(handles.line_px_edit.String);
     lines_p_square = sqrt(handles.nframes);
     recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square, handles.rotate_skewstripe_cb.Value);
-%     recon = chessboard_correction_old(recon, lines_p_square);
     if frame == 1
         stack = recon;
     else
         stack = cat(3, stack, recon);
     end
+end
+if handles.multi_f_cb.Value
+    stack = chessboard_correction_multi_f(stack, lines_p_square);
 end
 cent_g = str2double(handles.pinhole_edit.String);
 bg_g = str2double(handles.BGFWHM_edit.String);
@@ -930,14 +934,13 @@ function chessb_corr_but_new_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.working_text.String = 'Correcting chessboard...'
-im = handles.recon_im;
+im = handles.showing_im;
 im = im - min(im(:));
 square_side = sqrt(handles.nframes);
 corrected = chessboard_correction_LS(im, square_side);
-handles.recon_im = corrected;
+handles.showing_im = corrected;
 handles.working_text.String = 'Finished correcting chessboard'
 update_recon_axis(hObject, handles)
-handles = guidata(hObject);
 guidata(hObject, handles);
 
 
@@ -983,6 +986,20 @@ function hide_frame_cb_Callback(hObject, eventdata, handles)
 % hObject    handle to hide_frame_cb (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+im = handles.recon_im;
+if handles.hide_frame_cb.Value
+    im = im(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line);
+end
+handles.showing_im = im;
 update_recon_axis(hObject, handles);
 guidata(hObject, handles)
 % Hint: get(hObject,'Value') returns toggle state of hide_frame_cb
+
+
+% --- Executes on button press in multi_f_cb.
+function multi_f_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to multi_f_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of multi_f_cb

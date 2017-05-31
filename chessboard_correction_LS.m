@@ -1,4 +1,4 @@
-function corrected_final = chessboard_correction_LS(im, square_side)
+function [corrected_final, corr_fac] = chessboard_correction_LS(im, square_side)
 
 % %temp
 % im = im(1+32*12:40*32, 1+32*12:40*32);
@@ -67,31 +67,31 @@ assert(resize_fac(1) == resize_fac(2), 'Something strange here')
 resize_fac = resize_fac(1);
 C_im = imresize(C_mat, resize_fac, 'nearest');
 
-corrected_im = C_im .* double(im);
-
 if mean(sol) < 0
-    corrected_im = -corrected_im;
+    C_im = - C_im;
 end
-corrected_im = corrected_im - min(corrected_im(:));
+C_im = C_im ./ mean(C_im(:)); %Normalize around one
 
-%%Correct low frew int artifact
+%%Correct low freq int artifact. Sometimes the corrected image at this
+%%points shows a low freq drift in intensity over the image. The following
+%%code aims to correct for that.
 pad = 100;
-corr_padded = padarray(corrected_im, [pad pad], 0);
-org_padded = padarray(im, [pad pad], 0);
+corr_padded = padarray(C_im, [pad pad], 1);
+% org_padded = ones(size(corr_padded));
 filt = Gaussfilt(size(corr_padded), 0.01);
 corr_ft = fftshift(fft2(corr_padded));
-org_ft = fftshift(fft2(org_padded));
+% org_ft = fftshift(fft2(org_padded));
 corr_ft_filtered = corr_ft.*filt;
-org_ft_filtered = org_ft.*filt;
+% org_ft_filtered = org_ft.*filt;
 corr_filtered = real(ifft2(ifftshift(corr_ft_filtered)));
-org_filtered = real(ifft2(ifftshift(org_ft_filtered)));
+% org_filtered = real(ifft2(ifftshift(org_ft_filtered)));
 corr_filtered = corr_filtered(pad+1:end-pad, pad+1:end-pad);
-org_filtered = org_filtered(pad+1:end-pad, pad+1:end-pad);
+% org_filtered = org_filtered(pad+1:end-pad, pad+1:end-pad);
 
-corr_fac = org_filtered ./ corr_filtered;
+corr_fac = C_im ./ corr_filtered;
 
 
-corrected_final = corr_fac .* corrected_im;
+corrected_final = corr_fac .* im;
 
 % [n_up_lines, n_down_lines, n_right_lines, n_left_lines] = make_border_matrices(corrected_im, square_side);
 % figure

@@ -4,7 +4,7 @@ function [ averaged ] = Average_recordings(  )
 %average of the averages of the recordings. (Note that this average only
 %represents the global average if all the recordings contains the same
 %number of frames.
-
+addpath ../
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
 D = dir(strcat(LoadDataPathName, '\*.hdf5'));
 fileNames = {D([D.isdir] == 0)};  

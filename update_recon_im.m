@@ -7,6 +7,11 @@ if isfield(handles, 'central_signal')
     else
         handles.recon_im = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
     end
+    if handles.hide_frame_cb.Value
+        handles.showing_im = handles.recon_im(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line);
+    else
+        handles.showing_im = handles.recon_im;  
+    end
     guidata(hObject, handles);
 end
 

@@ -1,12 +1,14 @@
 function [ cmats_corr ] = Noise_corr_cmats( cmats, presets )
-%UNTITLED4 Summary of this function goes here
-%   Detailed explanation goes here
+%Function takes the cmats from the first LS-fitting and filteres the
+%bg_data using a custom filtering function. The new filtered bg_data is
+%then used to recalculate the in-focus data, hopefully with a slighly lower
+%noise.
 nnulls = presets.nulls_x * presets.nulls_y;
 N_bases = size(presets.B, 2)/nnulls;
 nframes = size(cmats, 2);
 
 twostep = 1;
-%%Filter the 3rd coefficients spatially
+%%Filter the 3rd coefficients spatially (lowest frequency signal)
 cmat_bg_filtered = Spat_filt_cmat_LS(cmats(:,:,N_bases));
 
 

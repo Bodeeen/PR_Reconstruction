@@ -49,7 +49,8 @@ end
 update_recon_im(hObject, handles)
 handles = guidata(hObject);
 update_recon_axis(hObject, handles)
+handles = guidata(hObject);
 handles.working_text.String = 'Finished!'
-guidata(hObject, handles);
+guidata(hObject, handles)
 end
 
