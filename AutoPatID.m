@@ -1,6 +1,6 @@
 function [ pattern ] = AutoPatID( im, expected_value )
-%UNTITLED6 Summary of this function goes here
-%   Detailed explanation goes here
+%Function that finds the period and offset of a grid patterned image given
+%reasonably accurate estimated period.
 
 w = fft2(im);
 power_spectra = abs(w).^2;

@@ -14,6 +14,8 @@ uL_p = 750; % uLens periodicity
 
 px_size_out = 65;
 
+%Define the amount of energy (arbitrary units) delivered to the sample with
+%each pulse. Also the bg level of off-switching and bg-fluorescence.
 act_E = 2; %2 here Gives 86% activation
 off_E = 10;
 bg = 0.05;
@@ -99,37 +101,39 @@ for z = foc_z - z_step_px:-z_step_px:1
     gt(:,:,z) = imrotate(fp, rot_step*rot_ang, 'crop');
     rot_step = rot_step - 1;
 end
-% gt = gpuArray(imrotate(gt, 30, 'crop'));
 gt = imrotate(gt, 30, 'crop');
 
 %% Make data
-
-% Act_fac = gpuArray(1 - exp(-act_sat_fac .* Act));
-% Off_fac = gpuArray(off_switch_bg_lvl + (1-off_switch_bg_lvl)*exp(-off_sat_fac .* OP));
-% RO_fac = gpuArray(1 - exp(-ro_sat_fac .* RO));
-
+%Calculate factors for activation, off-switching and read-out.
 Act_fac = 1 - exp(-act_E .* Act);
 Off_fac = bg + (1-bg)*exp(-off_E .* OP);
 RO_fac = (bg-1)*exp(-ro_E .* RO) + bg*(-ro_E .* RO) + 1 - bg;
 
+%Scan parameters
 steps = scan_size / step_size;
 [yj, xj, zj] = ndgrid(1:size(xi, 1), 1:size(xi,2), 1:size(xi,3));
 step_size_px = step_size/vx_size;
 scan_size_px = scan_size/vx_size;
 
+%test is just matrix used to find what the size of the resized data will
+%be.
 test = imresize(xi,vx_size/px_size_out);
 
 rec = zeros(size(test, 1), size(test, 2), steps^2);
 
+
+%Create fourier domain filters for the different Z-planes to simulated the
+%blurring of the microscope later.
 ft_diff_lim_kerns = zeros(size(rec, 1), size(rec, 2), size(xi, 3));
 for i = 1:size(ft_diff_lim_kerns,3)
     diff_lim_kern = Gausskern(size(ft_diff_lim_kerns, 1), detPSFxy(i)*2.355/px_size_out);
     diff_lim_kern = diff_lim_kern ./ sum(diff_lim_kern(:));
     ft_diff_lim_kerns(:,:,i) = fftshift(fft2(diff_lim_kern));
 end
-% ft_diff_lim_kerns = gpuArray(ft_diff_lim_kerns);
 step = 1;
-b_or_f = 1; %Back and forth mem var
+b_or_f = 1; %Back and forth memory var
+
+%Simulate the scan
 h = waitbar(0, 'Simulating...');
 for dx = step_size_px/2:step_size_px:scan_size_px - step_size_px/2
     waitbar(dx/scan_size_px)
@@ -157,17 +161,9 @@ for dx = step_size_px/2:step_size_px:scan_size_px - step_size_px/2
     b_or_f = b_or_f + 1;
 end
 close(h)
+%Add emtpy first frame, only because the real data has that and the
+%reconstruction software is writted to account for that.
 rec = cat(3, zeros(size(rec, 1),size(rec, 2)), rec);
-
-
-
-
-
-
-
-
-
-
 
 
 end

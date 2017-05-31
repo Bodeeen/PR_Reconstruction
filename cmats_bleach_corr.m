@@ -1,5 +1,7 @@
 function [ cmats_corr ] = cmats_bleach_corr( cmats, presets )
-%cmats_bleach_corr
+% Function to correct for bleaching given a cmat matrix. The idea was to
+% use different approaches for the in-focus and out-of-focus signals. Could
+% need a look-over again.
 
 tot_sig_cent = mean(cmats(:,:,1), 1);
 

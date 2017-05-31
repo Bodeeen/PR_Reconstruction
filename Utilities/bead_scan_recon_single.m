@@ -1,4 +1,5 @@
-
+% Short script for reconstructing a single bead scan. Simply gets the total
+% signal from each frame and reshapes into square image.
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
 N = 0;
 

@@ -1,3 +1,4 @@
+%%Script to reconstruct a volume bead scan.
 slices = inputdlg('Number of slices?');
 slices = str2num(slices{1});
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
@@ -7,6 +8,7 @@ path = strcat(LoadPathName, LoadFileName);
 data = load_image_stack(path);
 trace = squeeze(mean(mean(data, 2), 1));
 
+%Remove first frame if necessary
 if round(sqrt(numel(trace)/slices)) ~= sqrt(numel(trace)/slices)
     trace = trace(2:end);
 end

@@ -69,6 +69,7 @@ switch handles.pattern_panel.SelectedObject.String
     case 'Widefield'
         handles.expected_period = str2double(handles.wf_period_edit.String);
 end
+addpath(genpath('../PR_Reconstruction'))
 guidata(hObject, handles);
 
 
@@ -673,7 +674,7 @@ function chessb_corr_but_old_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 im = handles.recon_im;
 square_side = sqrt(handles.nframes);
-corrected = chessboard_correction_add(im, square_side);
+corrected = chessboard_correction_old(im, square_side);
 handles.recon_im = corrected;
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
@@ -767,7 +768,7 @@ for i = file_indexes
     line_px = str2double(handles.line_px_edit.String);
     lines_p_square = sqrt(handles.nframes);
     recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square, handles.rotate_skewstripe_cb.Value);
-%     recon = chessboard_correction_add(recon, lines_p_square);
+%     recon = chessboard_correction_old(recon, lines_p_square);
     if frame == 1
         stack = recon;
     else

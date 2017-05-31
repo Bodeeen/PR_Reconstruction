@@ -1,7 +1,5 @@
 function [ cropped_image ] = crop_image( image, cropping_data )
-%UNTITLED4 Summary of this function goes here
-%   Detailed explanation goes here
-
+%Crop image according to cropping_data
 %% Extract cropping parameters
 X0 = cropping_data.X0;
 Y0 = cropping_data.Y0;

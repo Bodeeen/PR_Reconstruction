@@ -1,4 +1,4 @@
-function [cmats, Ecmats] = signal_extraction_BandPass(data, presets)
+function [cmats, Ecmats] = signal_extraction_LS(data, presets)
 % Given the pattern period and offset as well as the output pixel length
 % and the scanning pixel length it constructs the central and peripheral
 % signal frames as used in the publication: 'Nanoscopy with more than a

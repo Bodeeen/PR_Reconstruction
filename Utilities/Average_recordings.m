@@ -1,6 +1,9 @@
 function [ averaged ] = Average_recordings(  )
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%Function that lets the user choose a file containing sevral file of
+%recordings and the script opens all the files in order and returns the
+%average of the averages of the recordings. (Note that this average only
+%represents the global average if all the recordings contains the same
+%number of frames.
 
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
 D = dir(strcat(LoadDataPathName, '\*.hdf5'));

@@ -1,4 +1,4 @@
-function tot_corr_im = chessboard_correction_add( im, square_side )
+function tot_corr_im = chessboard_correction_old( im, square_side )
 
 [up_lines, ~, right_lines, left_lines] = make_border_matrices(im, square_side);
 

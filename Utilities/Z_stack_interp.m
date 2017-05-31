@@ -1,3 +1,6 @@
+%Upsample Z-stack along z-axis with user set interpolation. Not really
+%finished.
+
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
 filepath = strcat(LoadPathName, LoadFileName);
 
