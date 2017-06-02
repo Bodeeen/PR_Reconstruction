@@ -11,6 +11,7 @@ vx_size = 20; %Voxel side of the initial data volume
 
 step_size = 25; %Step size of scan
 uL_p = 750; % uLens periodicity
+zp = 1200; %Z-repetition of fourier planes
 
 px_size_out = 65;
 
@@ -31,7 +32,6 @@ s0z = 460/2.355;    % Sigma of excitation PSF in z where x=y=0
 detPSFxy0 = 220/2.355; %Sigma of detection PSF in xy where z = 0
 detPSFz0 = 520/2.355; %Sigma of detection PSF in z where x=y=0
 
-z_decay_ex = exp(-zi.^2/(2*s0z^2)); % Decay of intensity along Z-axis of the excitation light
 z_decay_det = exp(-zi.^2/(2*detPSFz0^2)); % Decay of intensity along Z-axis of the detection PSF
 
 if WF_R
@@ -47,7 +47,7 @@ if(round(scan_size/step_size) ~= scan_size/step_size)
        steps = round(OP_p/step_size);
        step_size = OP_p / steps;
 end
-s = s0xy ./ sqrt(z_decay_ex);
+
 detPSFxy = detPSFxy0 ./ sqrt(squeeze(z_decay_det(1,1,:))); % Decay of detection PSF sigma along z 
 
 %Make activation pattern
@@ -55,9 +55,21 @@ if WF_R
     Act = ones(size(xi));
 else
     Act = zeros(size(xi));
-    for dx = -size_x:uL_p:size_x
-        for dy = -size_y:uL_p:size_y
-            Act = Act + z_decay_ex .* exp(-((xi-dx).^2 + (yi-dy).^2)./(2*s.^2));
+    zp1 = zp:zp:size_z/2;
+    zp2 = fliplr(0:-zp:-size_z/2);
+    zp_v = cat(2, zp2, zp1);
+    for dz = zp_v
+        if mod(dz/zp, 2) == 1
+            xyshift = uL_p / 2;
+        else
+            xyshift = 0;
+        end
+        z_decay_ex = exp(-(zi-dz).^2/(2*s0z^2)); % Decay of intensity along Z-axis of the excitation light
+        s = s0xy ./ sqrt(z_decay_ex);
+        for dx = -size_x:uL_p:size_x
+            for dy = -size_y:uL_p:size_y
+                Act = Act + z_decay_ex .* exp(-((xi-dx-xyshift).^2 + (yi-dy-xyshift).^2)./(2*s.^2));
+            end
         end
     end
 end

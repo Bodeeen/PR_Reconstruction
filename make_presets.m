@@ -1,4 +1,3 @@
-%% Returns the distances to the closest pattern maxima of the actual positions xj and yj
 function [presets] = make_presets(imsize, pattern, base_preset, ssrot, flip_ss, simp_pin)
 
 % decode the pattern
@@ -72,7 +71,7 @@ if base_preset(2) ~= 0
     B = [B BG1];
 end
 waitbar(2/nr_bases)
-%Make constant bg (this is also used to error calculation which is why it
+%Make constant bg (this is also used for error calculation which is why it
 %is always created.
 BG2 = sparse([], [], [], By, Bx, size_x*size_y);
 for i = 1:numel(xi)

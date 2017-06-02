@@ -762,7 +762,7 @@ handles = guidata(hObject);
 skew_fac = str2double(handles.skew_fac_edit.String);
 line_px = str2double(handles.line_px_edit.String);
 lines_p_square = handles.fr_p_line;
-handles.recon_im = Skew_stripe_corr(skew_fac, line_px, handles.recon_im, lines_p_square, handles.rotate_skewstripe_cb.Value);
+handles.showing_im = Skew_stripe_corr(skew_fac, line_px, handles.showing_im, lines_p_square, handles.rotate_skewstripe_cb.Value);
 update_recon_axis(hObject, handles)
 guidata(hObject, handles);
 
