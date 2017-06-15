@@ -10,8 +10,8 @@ size_z = 4000;
 vx_size = 20; %Voxel side of the initial data volume 
 
 step_size = 25; %Step size of scan
-uL_p = 750; % uLens periodicity
-zp = 1200; %Z-repetition of fourier planes
+uL_p = 500; % uLens periodicity
+zp = 500; %Z-repetition of fourier planes
 
 px_size_out = 65;
 

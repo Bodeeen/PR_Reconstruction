@@ -669,6 +669,9 @@ for i = file_indexes
         stack = cat(3, stack, recon);
     end
 end
+if handles.hide_frame_cb.Value
+    stack = stack(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line,:);
+end
 if handles.multi_f_cb.Value
     stack = chessboard_correction_multi_f(stack, lines_p_square);
 end
