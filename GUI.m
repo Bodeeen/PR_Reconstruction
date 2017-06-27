@@ -604,7 +604,12 @@ function Multi_frame_recon_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
-D = dir(strcat(LoadDataPathName, '\*.hdf5'));
+button = questdlg('Which format to you want to load?' ,'Format','.hdf5','.tif','.hdf5');
+if strcmp(button, '.hdf5')   
+    D = dir(strcat(LoadDataPathName, '\*.hdf5'));
+elseif strcmp(button, '.tif')
+    D = dir(strcat(LoadDataPathName, '\*.tif'));
+end
 fileNames = {D([D.isdir] == 0)};  
 fileNames = fileNames{1};
 [~, file_indexes] = sort([fileNames.datenum]);
@@ -659,21 +664,24 @@ for i = file_indexes
     else
         recon = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
     end
-    skew_fac = str2double(handles.skew_fac_edit.String);
-    line_px = str2double(handles.line_px_edit.String);
-    lines_p_square = sqrt(handles.nframes);
-    recon = Skew_stripe_corr(skew_fac, line_px, recon, lines_p_square, handles.rotate_skewstripe_cb.Value);
     if frame == 1
         stack = recon;
     else
         stack = cat(3, stack, recon);
     end
 end
+skew_fac = str2double(handles.skew_fac_edit.String);
+line_px = str2double(handles.line_px_edit.String);
+lines_p_square = handles.fr_p_line;
 if handles.hide_frame_cb.Value
     stack = stack(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line,:);
 end
 if handles.multi_f_cb.Value
     stack = chessboard_correction_multi_f(stack, lines_p_square);
+end
+for i = 1:size(stack, 3)
+    stack(:,:,i) = Skew_stripe_corr(skew_fac, line_px, stack(:,:,i), lines_p_square, handles.rotate_skewstripe_cb.Value);
+
 end
 cent_g = str2double(handles.pinhole_edit.String);
 bg_g = str2double(handles.BGFWHM_edit.String);
