@@ -1,3 +1,10 @@
+%Script for fiding the transform between two images. Note that one of the
+%images is flipped horizontally when imported since the one of the cameras
+%is flipped. This makes finding corresponding points easier. But also
+%requiers that the stack is flipped when imported in the "Transform stack"
+%script.
+
+
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load moving file');
 path = strcat(LoadPathName, LoadFileName);
 moving = load_image(path);

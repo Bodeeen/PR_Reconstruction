@@ -1,4 +1,6 @@
-
+%Script for transforming a whole stack given the transform matric tform.
+%Note that the stack is flipped (fliplr) when imported, see description in
+%"Find_transform" for explanaition.
 
 [LoadFileName,LoadPathName] = uigetfile({'*.*'}, 'Load data file');
 
