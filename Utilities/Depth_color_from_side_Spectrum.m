@@ -7,14 +7,14 @@ im = double(imread(path))./256;
 xi = xi ./ max(xi(:));
 yi = yi ./ max(yi(:));
 
-y4 = 4*yi;
+y = 6*yi;
 
 z = zeros(size(im));
 o = ones(size(im));
 
-r=min(max(min(y4-1.5,-y4+4.5),z),o); 
-g=min(max(min(y4-0.5,-y4+3.5),z),o); 
-b=min(max(min(y4+0.5,-y4+2.5),z),o); 
+r=min(max(max(y-4,-y+2),z),o); 
+g=min(max(min(y,-y+4),z),o); 
+b=min(max(min(y-2,-y+6),z),o); 
 
 im_r = im.*r;
 im_g = im.*g;
