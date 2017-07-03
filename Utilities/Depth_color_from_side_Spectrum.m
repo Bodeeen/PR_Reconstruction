@@ -21,5 +21,5 @@ im_g = im.*g;
 im_b = im.*b;
 im_rgb = cat(3, im_r, im_g, im_b);
 % im_rgb = flipud(im_rgb);
-imwrite(im_rgb, 'ZX_rgb.tiff')
+imwrite(im_rgb, 'ZX_rgb.tif')
 

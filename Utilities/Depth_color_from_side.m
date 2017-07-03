@@ -6,16 +6,16 @@ im = double(imread(path))./256;
 xi = xi ./ max(xi(:));
 yi = yi ./ max(yi(:));
 
-y = 4*yi;
+y = 2*yi;
 
 z = zeros(size(im));
 o = ones(size(im));
-r=min(max(-y+2,z),o); 
-g=min(max(min(y,-y+4),z),o); 
-b=min(max(y-2,z),o); 
+r=min(max(y-1,z),o); 
+b=min(max(-y+1,z),o); 
+g=min(max(min(y,-y+2),z),o); 
 
 im_r = im.*r;
 im_g = im.*g;
 im_b = im.*b;
 im_rgb = cat(3, im_r, im_g, im_b);
-imwrite(im_rgb, 'ZX_rgb.tiff')
+imwrite(im_rgb, 'ZX_rgb.tif')

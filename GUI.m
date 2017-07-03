@@ -604,9 +604,11 @@ function Multi_frame_recon_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
-button = questdlg('Which format to you want to load?' ,'Format','.hdf5','.tif','.hdf5');
+button = questdlg('Which format to you want to load?' ,'Format','.hdf5', '.h5','.tif','.hdf5');
 if strcmp(button, '.hdf5')   
     D = dir(strcat(LoadDataPathName, '\*.hdf5'));
+elseif strcmp(button, '.h5')
+    D = dir(strcat(LoadDataPathName, '\*.h5'));
 elseif strcmp(button, '.tif')
     D = dir(strcat(LoadDataPathName, '\*.tif'));
 end
