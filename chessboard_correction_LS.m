@@ -45,8 +45,8 @@ u_mat = circshift(u_mat, -cx, 2);
 UR = d_mat-u_mat;
 LR = eye(size(UR));
 LR = LR - circshift(LR, -cx, 2);
-UR = UR(:,1:size(UL, 2));
-LR = LR(:,1:size(UL, 2));
+UR = UR(:,1:end-cx);
+LR = LR(:,1:end-cx);
 
 A = [UL UR];
 
@@ -72,25 +72,32 @@ if mean(sol) < 0
 end
 C_im = C_im ./ mean(C_im(:)); %Normalize around one
 
-%%Correct low freq int artifact. Sometimes the corrected image at this
-%%points shows a low freq drift in intensity over the image. The following
-%%code aims to correct for that.
-pad = 100;
-corr_padded = padarray(C_im, [pad pad], 1);
-% org_padded = ones(size(corr_padded));
-filt = Gaussfilt(size(corr_padded), 0.01);
-corr_ft = fftshift(fft2(corr_padded));
-% org_ft = fftshift(fft2(org_padded));
-corr_ft_filtered = corr_ft.*filt;
-% org_ft_filtered = org_ft.*filt;
-corr_filtered = real(ifft2(ifftshift(corr_ft_filtered)));
-% org_filtered = real(ifft2(ifftshift(org_ft_filtered)));
-corr_filtered = corr_filtered(pad+1:end-pad, pad+1:end-pad);
-% org_filtered = org_filtered(pad+1:end-pad, pad+1:end-pad);
+filter_opt = 1;
+c = ones(size(C_im));
+if filter_opt == 1
+    %%Correct low freq int artifact. Sometimes the corrected image at this
+    %%points shows a low freq drift in intensity over the image. The following
+    %%code aims to correct for that. The filtering relies on the assumption
+    %%that the correction factors should be around 1 for the whole image.
+    pad = 100;
+    corr_padded = padarray(C_im, [pad pad], 0);
+    c_padded = padarray(c, [pad pad], 0);
+    filt = Gaussfilt(size(corr_padded), 0.01);
+    corr_ft = fftshift(fft2(corr_padded));
+    c_ft = fftshift(fft2(c_padded));
+    corr_ft_filtered = corr_ft.*filt;
+    c_ft_filtered = c_ft.*filt;
+    corr_filtered = real(ifft2(ifftshift(corr_ft_filtered)));
+    c_filtered = real(ifft2(ifftshift(c_ft_filtered)));
+    corr_filtered = corr_filtered(pad+1:end-pad, pad+1:end-pad);
+    c_filtered = c_filtered(pad+1:end-pad, pad+1:end-pad);
+end
 
-corr_fac = C_im ./ corr_filtered;
-
-
+if exist('corr_filtered') == 1
+    corr_fac = C_im ./ (corr_filtered ./ c_filtered);
+else
+    corr_fac = C_im;
+end
 corrected_final = corr_fac .* im;
 
 % [n_up_lines, n_down_lines, n_right_lines, n_left_lines] = make_border_matrices(corrected_im, square_side);

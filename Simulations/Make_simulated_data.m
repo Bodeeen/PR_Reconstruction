@@ -21,7 +21,7 @@ act_E = 2; %2 here Gives 86% activation
 off_E = 10;
 bg = 0.05;
 ro_E = 2;% 2 here Gives 86% read_out
-bg_fluorescence = 0.01; %Bg fluorescence is 10% of "structure fluorescence"
+bg_fluorescence = 0.01; %Bg fluorescence is 1% of "structure fluorescence"
 
 %% Make ndgrids, x-1 and y-1 is used to ease later construction of rec matrix
 %z-1 is not used because we want a true z = 0 plane.

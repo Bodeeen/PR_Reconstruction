@@ -46,7 +46,7 @@ corrected_x = expected_period*(1 + correction_x);
 cycles_y = abs(pix_y_1 - pix_y_2)/expected_period;
 diff_y = cycles_y - round(cycles_y);
 correction_y = diff_y/round(cycles_y);
-corrected_y = expected_period*(1 + correction_y);
+corrected_y = expected_period *(1 + correction_y);
 
 phx = mod(pix_x_1 - 1, corrected_x);
 phy = mod(pix_y_1 - 1, corrected_y);

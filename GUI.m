@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 31-May-2017 14:27:23
+% Last Modified by GUIDE v2.5 13-Jul-2017 15:49:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -683,7 +683,6 @@ if handles.multi_f_cb.Value
 end
 for i = 1:size(stack, 3)
     stack(:,:,i) = Skew_stripe_corr(skew_fac, line_px, stack(:,:,i), lines_p_square, handles.rotate_skewstripe_cb.Value);
-
 end
 cent_g = str2double(handles.pinhole_edit.String);
 bg_g = str2double(handles.BGFWHM_edit.String);
@@ -950,7 +949,11 @@ handles.working_text.String = 'Correcting chessboard...'
 im = handles.showing_im;
 im = im - min(im(:));
 square_side = sqrt(handles.nframes);
-corrected = chessboard_correction_LS(im, square_side);
+if handles.Sequential_cc_cb.Value
+    corrected = chessboard_correction_pyramid(im, square_side);
+else
+    corrected = chessboard_correction_LS(im, square_side);
+end
 handles.showing_im = corrected;
 handles.working_text.String = 'Finished correcting chessboard'
 update_recon_axis(hObject, handles)
@@ -1016,3 +1019,12 @@ function multi_f_cb_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of multi_f_cb
+
+
+% --- Executes on button press in Sequential_cc_cb.
+function Sequential_cc_cb_Callback(hObject, eventdata, handles)
+% hObject    handle to Sequential_cc_cb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Sequential_cc_cb
