@@ -769,8 +769,6 @@ function skew_stripe_corr_Callback(hObject, eventdata, handles)
 % hObject    handle to skew_stripe_corr (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-update_recon_im(hObject, handles)
-handles = guidata(hObject);
 skew_fac = str2double(handles.skew_fac_edit.String);
 line_px = str2double(handles.line_px_edit.String);
 lines_p_square = handles.fr_p_line;
