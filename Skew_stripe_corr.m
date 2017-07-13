@@ -10,15 +10,15 @@ function [corrected] = Skew_stripe_corr( skew_fac, line_px, im, lines_per_square
     % Skew correction
     
     [yi, xi] = ndgrid(0:imsize_y-1, 0:imsize_x-1);
-    rel_pos_in_square = yi./lines_per_square - floor(yi./lines_per_square);
+    rel_pos_in_square = xi./lines_per_square - floor(xi./lines_per_square);
 
-    x_shift = skew_fac * rel_pos_in_square * lines_per_square;
+    y_shift = skew_fac * rel_pos_in_square * lines_per_square;
     
     
     
-    xi_shifted = 1 + xi - x_shift;
-    yi = 1 + yi;
-    skew_corrected = interp2(im, xi_shifted, yi, 'cubic');  
+    yi_shifted = 1 + yi - y_shift;
+    xi = 1 + xi;
+    skew_corrected = interp2(im, xi, yi_shifted, 'cubic');  
     skew_corrected(isnan(skew_corrected)) = 0;
     
     
