@@ -47,6 +47,12 @@ pixel = (xi-1)*size_y+yi;
 h = waitbar(0,'Calculating bases...');
 B_cent = sparse([], [], [], By, Bx, By);
 
+Frame_bool = zeros(1,Bx);
+Frame_bool(1:nulls_y) = 1;
+Frame_bool(end-nulls_y+1:end) = 1;
+Frame_bool(1:nulls_y:end) = 1;
+Frame_bool(nulls_y:nulls_y:end) = 1;
+Frame_bool = repmat(Frame_bool, [1 nnz(base_preset)]);
 
 for i = 1:By
     B_cent(pixel(i) , null(i)) = g_cent(i);       
@@ -80,6 +86,13 @@ end
 if base_preset(3) ~= 0
     B = [B BG2];
 end
+rm_frame = true;
+if rm_frame
+    B  = B(:,~Frame_bool);
+    nulls_x = nulls_x - 2;
+    nulls_y = nulls_y - 2;
+end
+
 waitbar(3/nr_bases)
 close(h)
 presets.null_im = null;

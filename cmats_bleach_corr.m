@@ -5,8 +5,13 @@ function [ cmats_corr ] = cmats_bleach_corr( cmats, presets )
 
 tot_sig_cent = mean(cmats(:,:,1), 1);
 
-v = sgolayfilt(tot_sig_cent, 1, 101);
-v = v / mean(v);
+[b,a] = butter(12,0.1,'low');
+c = ones(size(tot_sig_cent));
+
+v = filtfilt(b,a,tot_sig_cent);
+% v = sgolayfilt(tot_sig_cent, 1, 101);
+% v = v / mean(v);
+
 vmat_cent = sparse(diag(1./v));
 
 cent_corr = cmats(:,:,1) * vmat_cent;
