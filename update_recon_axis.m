@@ -1,4 +1,5 @@
 function update_recon_axis(hObject, handles)
+%GUI function for updating the reconstructed image axis.
 if isfield(handles, 'recon_im')
     if handles.Sh_err_im_cb.Value
         im = handles.Error_im;

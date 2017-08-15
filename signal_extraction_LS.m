@@ -65,31 +65,6 @@ end
 
 
 
-function shifted_im = shift_columns(im, pixels, columns_per_square)
-
-    x_coords = 1:size(im, 2);
-
-    x_coords = mod(x_coords, columns_per_square);
-    selection_bool = mod(x_coords, 2) == 0;
-
-    selection = im(:, selection_bool);
-
-    size_selection_y = size(selection, 1);
-    size_selection_x = size(selection, 2);
-    [yi xi] = ndgrid(1:size_selection_y, 1:size_selection_x);
-
-    yi_shifted = yi + pixels;
-
-    shifted_selection = interp2(selection, xi, yi_shifted);
-    shifted_selection(isnan(shifted_selection)) = min(im(:));
-    im(:,selection_bool) = shifted_selection;
-    shifted_im = im;
-
-end
-
-
-
-
 
 
 

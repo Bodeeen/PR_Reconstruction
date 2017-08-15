@@ -1,5 +1,5 @@
 function [ corrected ] = chessboard_correction_pyramid( im, square_side )
-%
+% Under development
 
 cluster_size = 5;
 

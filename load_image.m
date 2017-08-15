@@ -1,6 +1,8 @@
 function [ im ] = load_image( path )
 %UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%   Loads image, hdf5 or tif. The tranformation of the tif image is due to
+%   the fact than hdf5 and tif snapshots were saved in different
+%   orientations.
 
 split = strsplit(path, '.');
 format = split{end};

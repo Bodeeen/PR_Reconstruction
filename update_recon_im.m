@@ -1,4 +1,5 @@
 function update_recon_im(hObject, handles)
+%GUI functino for updating the handles.recon_im variable.
 if isfield(handles, 'central_signal')
     axes(handles.recon_axis);
     slider_val = handles.slider.Value;
