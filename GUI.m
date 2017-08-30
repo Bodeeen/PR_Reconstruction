@@ -1056,8 +1056,15 @@ function rotate_data_button_Callback(hObject, eventdata, handles)
 % hObject    handle to rotate_data_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-angle = str2num(handles.rotate_data_edit.String)
-handles.raw_data = imrotate(handles.raw_data, angle, 'bicubic', 'crop')
+try
+    angle = str2num(handles.rotate_data_edit.String);
+    handles.raw_data = imrotate(handles.raw_data, angle, 'bicubic', 'crop');
+    handles.rotated_text.String = 'Rotated!';
+    set(handles.rotate_data_button,'Enable','off');
+catch
+    handles.rotated_text.String = 'Error!';
+end
+
 update_pattern_id_im(hObject, handles)
 handles = guidata(hObject); %Get updated version of handles (necessary?)
 guidata(hObject, handles)
