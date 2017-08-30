@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 13-Jul-2017 15:49:35
+% Last Modified by GUIDE v2.5 30-Aug-2017 11:29:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1026,3 +1026,38 @@ function Sequential_cc_cb_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of Sequential_cc_cb
+
+
+
+function rotate_data_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to rotate_data_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of rotate_data_edit as text
+%        str2double(get(hObject,'String')) returns contents of rotate_data_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function rotate_data_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rotate_data_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in rotate_data_button.
+function rotate_data_button_Callback(hObject, eventdata, handles)
+% hObject    handle to rotate_data_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+angle = str2num(handles.rotate_data_edit.String)
+handles.raw_data = imrotate(handles.raw_data, angle, 'bicubic', 'crop')
+update_pattern_id_im(hObject, handles)
+handles = guidata(hObject); %Get updated version of handles (necessary?)
+guidata(hObject, handles)
