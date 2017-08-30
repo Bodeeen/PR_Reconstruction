@@ -198,6 +198,10 @@ delete(child(3))
 raw_data = load_image_stack(filepath);
 corrected_raw_data = frame_correction(raw_data);
 handles.raw_data = corrected_raw_data;
+
+handles.rotated_text.String = '';
+set(handles.rotate_data_button,'Enable','on');
+
 update_pattern_id_im(hObject, handles)
 close(h)
 handles = guidata(hObject);%Get updated version of handles
