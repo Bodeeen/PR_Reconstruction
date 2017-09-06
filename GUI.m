@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 30-Aug-2017 11:29:55
+% Last Modified by GUIDE v2.5 06-Sep-2017 11:36:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -512,7 +512,11 @@ if handles.radio_ulens.Value == 1 && isfield(handles, 'raw_data')
     imshow(handles.pattern_id_im, []);
    
 elseif handles.radio_wf.Value == 1 && isfield(handles, 'pattern_im') && isfield(handles, 'raw_data')
-    handles.pattern_id_im = crop_image(handles.pattern_im, handles.cropping_data);
+    if handles.pattern_cropping_opt.Value == 2
+        handles.pattern_id_im = crop_image(handles.pattern_im, handles.cropping_data);
+    else
+        handles.pattern_id_im = handles.pattern_im;
+    end
     axes(handles.pattern_axis);
     imshow(handles.pattern_id_im, []);
 end
@@ -1072,3 +1076,26 @@ end
 update_pattern_id_im(hObject, handles)
 handles = guidata(hObject); %Get updated version of handles (necessary?)
 guidata(hObject, handles)
+
+
+% --- Executes on selection change in pattern_cropping_opt.
+function pattern_cropping_opt_Callback(hObject, eventdata, handles)
+% hObject    handle to pattern_cropping_opt (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pattern_cropping_opt contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pattern_cropping_opt
+
+
+% --- Executes during object creation, after setting all properties.
+function pattern_cropping_opt_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pattern_cropping_opt (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
