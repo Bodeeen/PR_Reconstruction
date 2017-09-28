@@ -10,7 +10,7 @@ c = ones(size(tot_sig_cent));
 
 v = filtfilt(b,a,tot_sig_cent);
 % v = sgolayfilt(tot_sig_cent, 1, 101);
-% v = v / mean(v);
+v = v / mean(v);
 
 vmat_cent = sparse(diag(1./v));
 
