@@ -84,7 +84,9 @@ RO = Act;
 % end
 
 %Make OFF-switching pattern
-OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi))));
+OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi)))); % "Old" 2D pattern
+
+
 
 %% Make GT volume
 gt = bg_fluorescence*ones(size(xi));
