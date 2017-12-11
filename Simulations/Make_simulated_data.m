@@ -4,14 +4,17 @@ function rec = Make_simulated_data( WF_R, OP_p )
 % periodicity
 
 %% Set parameters of simulation
-size_x = 10000;
-size_y = 10000;
-size_z = 4000;
+% size_x = 10000;
+% size_y = 10000;
+% size_z = 4000;
+size_x = 5000;
+size_y = 5000;
+size_z = 2000;
 vx_size = 20; %Voxel side of the initial data volume 
 
 step_size = 25; %Step size of scan
 uL_p = 500; % uLens periodicity
-zp = 500; %Z-repetition of fourier planes
+zp = 2000; %Z-repetition of fourier planes
 
 px_size_out = 65;
 
@@ -34,21 +37,26 @@ detPSFz0 = 520/2.355; %Sigma of detection PSF in z where x=y=0
 
 z_decay_det = exp(-zi.^2/(2*detPSFz0^2)); % Decay of intensity along Z-axis of the detection PSF
 
-if WF_R
-    scan_size = OP_p; % In WF-RESOLFT mode, scan_size equals Off-pattern periodicity.
-else
-    scan_size = uL_p; % In MF/SP-RESOLFT mode, scan_size equals uL-pattern periodicity.
-    assert(mod(uL_p, OP_p) == 0, 'Off pattern and microlens pattern does not match!')
-end
-
-%Correct so that scan_size is a multiple of step_size
-if(round(scan_size/step_size) ~= scan_size/step_size)
-       warning('Step size corrected!')
-       steps = round(OP_p/step_size);
-       step_size = OP_p / steps;
-end
-
 detPSFxy = detPSFxy0 ./ sqrt(squeeze(z_decay_det(1,1,:))); % Decay of detection PSF sigma along z 
+
+%Make OFF-switching pattern
+% OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi)))); % "Old" 2D pattern
+
+lair = 488;
+n = 1.51;
+l = lair/n;
+
+a1 = degtorad(68);
+a2 = degtorad(0);
+
+OP = cos((pi/l)*(-zi.*(sin(pi/2 - a1) - sin(pi/2 - a2)) - xi.*(cos(pi/2 - a1) - cos(pi/2 - 0)))).^2 + ...
+cos((pi/l)*(-zi.*(sin(pi/2 + a1) - sin(pi/2 + a2)) - xi.*(cos(pi/2 + a1) - cos(pi/2 + a2)))).^2 + ...
+cos((pi/l)*(-zi.*(sin(pi/2 - a1) - sin(pi/2 - a2)) - yi.*(cos(pi/2 - a1) - cos(pi/2 - a2)))).^2 + ...
+cos((pi/l)*(-zi.*(sin(pi/2 + a1) - sin(pi/2 + a2)) - yi.*(cos(pi/2 + a1) - cos(pi/2 + a2)))).^2;
+
+In_plane_p = 1/((1/l)*(cos(pi/2 - a1) + cos(pi/2 - a2)));
+
+uL_p = 2*In_plane_p;
 
 %Make activation pattern
 if WF_R
@@ -82,10 +90,6 @@ RO = Act;
 %         RO = RO + z_decay .* exp(-((xi-x).^2 + (yi-y).^2)./(2*s.^2));
 %     end
 % end
-
-%Make OFF-switching pattern
-OP = 0.5 + 0.25*(cos((xi-OP_p/2)/(OP_p/(2*pi))) + cos((yi-OP_p/2)/(OP_p/(2*pi)))); % "Old" 2D pattern
-
 
 
 %% Make GT volume
@@ -124,6 +128,21 @@ Off_fac = bg + (1-bg)*exp(-off_E .* OP);
 RO_fac = (bg-1)*exp(-ro_E .* RO) + bg*(-ro_E .* RO) + 1 - bg;
 
 %Scan parameters
+if WF_R
+    scan_size = OP_p; % In WF-RESOLFT mode, scan_size equals Off-pattern periodicity.
+else
+    scan_size = uL_p; % In MF/SP-RESOLFT mode, scan_size equals uL-pattern periodicity.
+    assert(mod(uL_p, OP_p) == 0, 'Off pattern and microlens pattern does not match!')
+end
+
+%Correct so that scan_size is a multiple of step_size
+if(round(scan_size/step_size) ~= scan_size/step_size)
+       warning('Step size corrected!')
+       steps = round(OP_p/step_size);
+       step_size = OP_p / steps;
+end
+
+
 steps = scan_size / step_size;
 [yj, xj, zj] = ndgrid(1:size(xi, 1), 1:size(xi,2), 1:size(xi,3));
 step_size_px = step_size/vx_size;
@@ -136,7 +155,7 @@ test = imresize(xi,vx_size/px_size_out);
 rec = zeros(size(test, 1), size(test, 2), steps^2);
 
 
-%Create fourier domain filters for the different Z-planes to simulated the
+%Create fourier domain filters for the different Z-planes to simulate the
 %blurring of the microscope later.
 ft_diff_lim_kerns = zeros(size(rec, 1), size(rec, 2), size(xi, 3));
 for i = 1:size(ft_diff_lim_kerns,3)

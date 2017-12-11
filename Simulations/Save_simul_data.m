@@ -9,7 +9,7 @@ i = 0;
 for ss = sig_strength_vec
     waitbar(i/length(sig_strength_vec))
     rec_adj = rec * ss;
-    noisy_rec = poissrnd(rec_adj); %Adding poissonian noise
+    noisy_rec = uint16(poissrnd(rec_adj)); %Adding poissonian noise
     savepath = strcat(dname, '\', name, 'ss_', num2str(ss), '.h5');
     h5create(savepath, '/data', size(noisy_rec))
     h5write(savepath, '/data', noisy_rec)
