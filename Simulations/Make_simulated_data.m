@@ -4,12 +4,10 @@ function rec = Make_simulated_data( WF_R, OP_p )
 % periodicity
 
 %% Set parameters of simulation
-% size_x = 10000;
-% size_y = 10000;
-% size_z = 4000;
-size_x = 5000;
-size_y = 5000;
-size_z = 2000;
+size_x = 10000;
+size_y = 10000;
+size_z = 4000;
+
 vx_size = 20; %Voxel side of the initial data volume 
 
 step_size = 25; %Step size of scan
@@ -21,7 +19,7 @@ px_size_out = 65;
 %Define the amount of energy (arbitrary units) delivered to the sample with
 %each pulse. Also the bg level of off-switching and bg-fluorescence.
 act_E = 2; %2 here Gives 86% activation
-off_E = 10;
+off_E = 30; %A value of 10 was used in the manuscript simulations
 bg = 0.05;
 ro_E = 2;% 2 here Gives 86% read_out
 bg_fluorescence = 0.01; %Bg fluorescence is 1% of "structure fluorescence"
@@ -49,13 +47,13 @@ l = lair/n;
 a1 = degtorad(68);
 a2 = degtorad(0);
 
-OP = cos((pi/l)*(-zi.*(sin(pi/2 - a1) - sin(pi/2 - a2)) - xi.*(cos(pi/2 - a1) - cos(pi/2 - 0)))).^2 + ...
+OP = 1/4*(cos((pi/l)*(-zi.*(sin(pi/2 - a1) - sin(pi/2 - a2)) - xi.*(cos(pi/2 - a1) - cos(pi/2 - 0)))).^2 + ...
 cos((pi/l)*(-zi.*(sin(pi/2 + a1) - sin(pi/2 + a2)) - xi.*(cos(pi/2 + a1) - cos(pi/2 + a2)))).^2 + ...
 cos((pi/l)*(-zi.*(sin(pi/2 - a1) - sin(pi/2 - a2)) - yi.*(cos(pi/2 - a1) - cos(pi/2 - a2)))).^2 + ...
-cos((pi/l)*(-zi.*(sin(pi/2 + a1) - sin(pi/2 + a2)) - yi.*(cos(pi/2 + a1) - cos(pi/2 + a2)))).^2;
+cos((pi/l)*(-zi.*(sin(pi/2 + a1) - sin(pi/2 + a2)) - yi.*(cos(pi/2 + a1) - cos(pi/2 + a2)))).^2);
 
 In_plane_p = 1/((1/l)*(cos(pi/2 - a1) + cos(pi/2 - a2)));
-
+OP_p = In_plane_p;
 uL_p = 2*In_plane_p;
 
 %Make activation pattern
