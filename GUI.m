@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 06-Sep-2017 11:36:41
+% Last Modified by GUIDE v2.5 14-Feb-2018 10:04:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -262,6 +262,9 @@ function find_pattern_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 find_pattern(hObject, eventdata, handles, 'auto')
+handles = guidata(hObject); %Get updated version of handles
+Update_pattern_edits_fr_handles(hObject, eventdata, handles)
+Show_pattern(hObject, eventdata, handles)
 
 % --- Executes on button press in find_pat_man.
 function find_pat_man_Callback(hObject, eventdata, handles)
@@ -269,6 +272,9 @@ function find_pat_man_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 find_pattern(hObject, eventdata, handles, 'man')
+handles = guidata(hObject); %Get updated version of handles
+Update_pattern_edits_fr_handles(hObject, eventdata, handles)
+Show_pattern(hObject, eventdata, handles)
 
 
 function ulens_period_edit_Callback(hObject, eventdata, handles)
@@ -1099,3 +1105,133 @@ function pattern_cropping_opt_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+function dx_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to dx_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of dx_edit as text
+%        str2double(get(hObject,'String')) returns contents of dx_edit as a double
+handles.pattern(1) = str2double(handles.dx_edit.String);
+guidata(hObject, handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function dx_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to dx_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function x0_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to x0_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of x0_edit as text
+%        str2double(get(hObject,'String')) returns contents of x0_edit as a double
+handles.pattern(2) = str2double(handles.x0_edit.String);
+guidata(hObject, handles)
+
+% --- Executes during object creation, after setting all properties.
+function x0_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to x0_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function dy_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to dy_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of dy_edit as text
+%        str2double(get(hObject,'String')) returns contents of dy_edit as a double
+handles.pattern(3) = str2double(handles.dy_edit.String);
+guidata(hObject, handles)
+
+% --- Executes during object creation, after setting all properties.
+function dy_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to dy_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function y0_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to y0_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of y0_edit as text
+%        str2double(get(hObject,'String')) returns contents of y0_edit as a double
+handles.pattern(4) = str2double(handles.y0_edit.String);
+guidata(hObject, handles)
+
+% --- Executes during object creation, after setting all properties.
+function y0_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to y0_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in show_pattern_btn.
+function show_pattern_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to show_pattern_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+Show_pattern(hObject, eventdata, handles)
+
+
+% --- Executes on button press in Save_pattern_btn.
+function Save_pattern_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_pattern_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+split = strsplit(handles.data_edit.String, '.');
+filename = strcat(split{1}, '_pattern.mat');
+[FileName, PathName] = uiputfile(filename);
+p = handles.pattern;;
+save(strcat(PathName, FileName), 'p');
+
+% --- Executes on button press in Load_pattern_btn.
+function Load_pattern_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to Load_pattern_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+path = fliplr(extractAfter(fliplr(handles.data_edit.String), '\'));
+[FileName, PathName] = uigetfile(path);
+p = load(strcat(PathName, FileName));
+handles.pattern = p.p;
+guidata(hObject, handles)
+Update_pattern_edits_fr_handles(hObject, eventdata, handles);
+
