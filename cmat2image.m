@@ -23,7 +23,7 @@ function [reconstructed fr_p_line fr_p_column] = cmat2image(cmat, presets, doubl
     
     for i = 1:nnulls
         subsquare = reshape(cmat(i,:), fr_p_line, fr_p_line);
-        subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));
+%         subsquare(:,1:2:end) = flipud(subsquare(:,1:2:end));
         %OBS Below rotation is tightly coupled to the rotation in
         %Spat_filt_cmat_conv!
         subsquare = rot90(subsquare,ssrot);
