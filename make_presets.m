@@ -58,10 +58,8 @@ for i = 1:By
     B_cent(pixel(i) , null(i)) = g_cent(i);       
 end
 bsum = sum(B_cent, 1);
-if simp_pin
-    for i = 1:Bx
+for i = 1:Bx
         B_cent(:,i) = B_cent(:,i)./bsum(i);
-    end
 end
 
 B = B_cent;
@@ -103,7 +101,7 @@ presets.dy = dy;
 presets.dnull = dnull;
 presets.null = null;
 presets.pixel = pixel;
-Ginv = inv(B'*B);
+Ginv = inv(B'*  B);
 presets.B = B;
 presets.SS_const_base = BG2;
 presets.Ginv = Ginv;

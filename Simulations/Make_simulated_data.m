@@ -4,13 +4,13 @@ function rec = Make_simulated_data( WF_R, OP_p )
 % periodicity
 
 %% Set parameters of simulation
-size_x = 10000;
-size_y = 10000;
-size_z = 4000;
+size_x = 1000;
+size_y = 1000;
+size_z = 500;
 
 vx_size = 20; %Voxel side of the initial data volume 
 
-step_size = 25; %Step size of scan
+step_size = 35; %Step size of scan
 uL_p = 500; % uLens periodicity
 zp = 2000; %Z-repetition of fourier planes
 

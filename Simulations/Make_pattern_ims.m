@@ -1,4 +1,4 @@
-function [Act_V, RO_B, OP_B] = Make_simulated_data( WF_R, OP_p )
+function [Act_V, RO_B, OP_B] = Make_pattern_ims( WF_R, OP_p )
 % Make simulated RESOLFT data, input variable WF_R determines WF-RESOLFT
 % mode (true) or MF/SP-RESOLFT mode (false). OP_p determines Off-pattern
 % periodicity
