@@ -617,18 +617,9 @@ function Multi_frame_recon_Callback(hObject, eventdata, handles)
 % hObject    handle to Multi_frame_recon (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-LoadDataPathName = uigetdir('C:\Users\andreas.boden\Documents\GitHub\PR_Reconstruction\Data', 'Choose folder containg ONLY the data');
-button = questdlg('Which format to you want to load?' ,'Format','.hdf5', '.h5','.tif','.hdf5');
-if strcmp(button, '.hdf5')   
-    D = dir(strcat(LoadDataPathName, '\*.hdf5'));
-elseif strcmp(button, '.h5')
-    D = dir(strcat(LoadDataPathName, '\*.h5'));
-elseif strcmp(button, '.tif')
-    D = dir(strcat(LoadDataPathName, '\*.tif'));
-end
-fileNames = {D([D.isdir] == 0)};  
-fileNames = fileNames{1};
-[~, file_indexes] = sort([fileNames.datenum]);
+
+[fileNames, LoadDataPathName] = uigetfile('*.*','Select the files to reconstruct', 'MultiSelect', 'on');
+file_indeces = 1:length(fileNames);
 
 base_preset = [0 0 0];
 base_preset(1) = str2double(handles.pinhole_edit.String) / str2double(handles.pixel_size_edit.String);
@@ -640,12 +631,10 @@ if handles.Const_bg_check.Value
 end
 
 pattern = handles.pattern;
-frame = 0
 slider_val = handles.slider.Value;
-for i = file_indexes
-    disp(strcat('Reconstructing: ', fileNames(i).name));
-    frame = frame + 1;
-    filepath = strcat(LoadDataPathName, '\', fileNames(i).name);
+for i = file_indeces
+    disp(strcat('Reconstructing: ', fileNames{i}));
+    filepath = strcat(LoadDataPathName, '\', fileNames{i});
     raw_data = load_image_stack(filepath);
     corrected_raw_data = frame_correction(raw_data);
     imsize = size(corrected_raw_data);
@@ -680,7 +669,7 @@ for i = file_indexes
     else
         recon = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
     end
-    if frame == 1
+    if i == 1
         stack = recon;
     else
         stack = cat(3, stack, recon);
