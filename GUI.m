@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 14-Feb-2018 10:04:40
+% Last Modified by GUIDE v2.5 21-Nov-2018 10:42:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,10 +59,11 @@ handles.output = hObject;
 % Update handles structure
 set(handles.pattern_panel, 'SelectionChangeFcn',  @pattern_panel_SelectionChangeFcn);
 set(handles.bleach_corr_check, 'Value', 1);
-Cent_G_fwhm = str2double(handles.pinhole_edit.String);
-BG_G_fwhm = str2double(handles.BGFWHM_edit.String);
 
 UpdatePinholeGraph(handles)
+pattern_data_nr_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+guidata(hObject, handles);
 switch handles.pattern_panel.SelectedObject.String
     case 'Microlenses'
         handles.expected_period = str2double(handles.ulens_period_edit.String);
@@ -196,8 +197,17 @@ h = msgbox('This could be a second. Patience...','Importing data','help');
 child = get(h,'Children');
 delete(child(3))
 raw_data = load_image_stack(filepath);
-corrected_raw_data = frame_correction(raw_data);
-handles.raw_data = corrected_raw_data;
+close(h)
+i_nr = str2double(handles.Interleaved_nr_edit.String);
+for i = 1:i_nr
+    data{i} = raw_data(:,:,i:i_nr:end);
+    if round(sqrt(size(data{i}, 3))) ~= sqrt(size(data{i}, 3))
+        waitfor(msgbox('Wrong number of frames, check data or interleaved data settings', 'Warning'));
+        return
+    end
+end
+%corrected_raw_data = frame_correction(raw_data);
+handles.raw_data = data;
 
 handles.rotated_text.String = '';
 set(handles.rotate_data_button,'Enable','on');
@@ -252,7 +262,7 @@ function run_reconstruction_Callback(hObject, eventdata, handles)
 % hObject    handle to run_reconstruction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-run_reconstruction(hObject, eventdata, handles);
+run_reconstruction(hObject, eventdata, handles, handles.active_data_set);
 
 
 
@@ -509,8 +519,9 @@ function update_pattern_id_im(hObject, handles)
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
+ads = handles.active_data_set;
 if handles.radio_ulens.Value == 1 && isfield(handles, 'raw_data')
-    handles.pattern_id_im = mean(handles.raw_data, 3);
+    handles.pattern_id_im = mean(handles.raw_data{ads}, 3);
     if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
         handles.pattern_id_im = handles.pattern_id_im - double(handles.HPC_im);
     end
@@ -630,69 +641,78 @@ if handles.Const_bg_check.Value
     base_preset(3) = 1;
 end
 
+data_sets = str2double(handles.Interleaved_nr_edit.String);
+
 pattern = handles.pattern;
 slider_val = handles.slider.Value;
 for i = file_indeces
     disp(strcat('Reconstructing: ', fileNames{i}));
     filepath = strcat(LoadDataPathName, '\', fileNames{i});
     raw_data = load_image_stack(filepath);
-    corrected_raw_data = frame_correction(raw_data);
-    imsize = size(corrected_raw_data);
     ssrot = str2double(handles.ssrot_edit.String);
-    if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
-        dbl_lines = str2double(handles.dbl_lines_edit.String);
-        dbl_cols = str2double(handles.dbl_cols_edit.String);
-        flip_ss = handles.flip_subsq_cb.Value;
-        simp_pin = handles.simp_pin_cb.Value;
-        microlens_recon_alg(hObject, handles, corrected_raw_data, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
-        handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
-    else
-        if handles.bleach_corr_check.Value
-            data = bleaching_correction(corrected_raw_data, 'Additive');
-        end
-        camera_pixel = str2double(handles.pixel_size_edit.String);
-        objp = 20 / camera_pixel;
-        number_scanning_steps = sqrt(size(data,3)) - 1;
-        shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
-        pinhole_size = str2double(handles.pinhole_edit.String);
-        recon_gauss = str2double(handles.ReconGaussSize.String);
-        if pinhole_size == recon_gauss
-            [central_signal, bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
+    for ads = 1:data_sets
+        raw_data_set = raw_data(:,:,ads:data_sets:end);
+        %corrected_raw_data = frame_correction(raw_data);
+        imsize = size(raw_data_set);
+        if handles.radio_ulens.Value() || handles.WF_recon_mode.Value == 2
+            dbl_lines = str2double(handles.dbl_lines_edit.String);
+            dbl_cols = str2double(handles.dbl_cols_edit.String);
+            flip_ss = handles.flip_subsq_cb.Value;
+            simp_pin = handles.simp_pin_cb.Value;
+            microlens_recon_alg(hObject, handles, raw_data_set, imsize, pattern, base_preset, ssrot, flip_ss, simp_pin, dbl_lines, dbl_cols)
+            handles = guidata(hObject); %Get updated version of handles (updated in microlens_recon_alg())
         else
-            [central_signal, bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
+            waitfor(msgbox('Widefield RESOLFT not up to date here', 'Oops..'));
+    %         if handles.bleach_corr_check.Value
+    %             data = bleaching_correction(corrected_raw_data, 'Additive');
+    %         end
+    %         camera_pixel = str2double(handles.pixel_size_edit.String);
+    %         objp = 20 / camera_pixel;
+    %         number_scanning_steps = sqrt(size(data,3)) - 1;
+    %         shift_per_step = handles.expected_period / number_scanning_steps / camera_pixel;
+    %         pinhole_size = str2double(handles.pinhole_edit.String);
+    %         recon_gauss = str2double(handles.ReconGaussSize.String);
+    %         if pinhole_size == recon_gauss
+    %             [central_signal, bg_signal] = signal_extraction_fast(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel);
+    %         else
+    %             [central_signal, bg_signal] = signal_extraction_STHLM2(data, pattern, objp, shift_per_step, pinhole_size/camera_pixel, recon_gauss/camera_pixel); 
+    %         end
+    %         handles.central_signal = central_signal;
+    %         handles.bg_signal = bg_signal;
         end
-        handles.central_signal = central_signal;
-        handles.bg_signal = bg_signal;
-    end
-    if handles.noise_corr_check.Value
-        recon = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
-    else
-        recon = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
-    end
-    if i == 1
-        stack = recon;
-    else
-        stack = cat(3, stack, recon);
+        if handles.noise_corr_check.Value
+            recon = (1-slider_val)*handles.central_signal_ncorr + slider_val*handles.bg_signal_ncorr;
+        else
+            recon = (1-slider_val)*handles.central_signal + slider_val*handles.bg_signal;
+        end
+        if i == 1
+            stacks{ads} = recon;
+        else
+            stacks{ads} = cat(3, stacks{ads}, recon);
+        end
     end
 end
 skew_fac = str2double(handles.skew_fac_edit.String);
 line_px = str2double(handles.line_px_edit.String);
 lines_p_square = handles.fr_p_line;
-if handles.hide_frame_cb.Value
-    stack = stack(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line,:);
-end
-if handles.multi_f_cb.Value
-    stack = chessboard_correction_multi_f(stack, lines_p_square);
-end
-for i = 1:size(stack, 3)
-    stack(:,:,i) = Skew_stripe_corr(skew_fac, line_px, stack(:,:,i), lines_p_square, handles.rotate_skewstripe_cb.Value);
+for ads = 1:data_sets
+    if handles.hide_frame_cb.Value
+        stacks{ads} = stacks{ads}(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line,:);
+    end
+    if handles.multi_f_cb.Value
+        stacks{ads} = chessboard_correction_multi_f(stack, lines_p_square);
+    end
+    for i = 1:size(stacks{ads}, 3)
+        stacks{ads}(:,:,i) = Skew_stripe_corr(skew_fac, line_px, stacks{ads}(:,:,i), lines_p_square, handles.rotate_skewstripe_cb.Value);
+    end
 end
 cent_g = str2double(handles.pinhole_edit.String);
 bg_g = str2double(handles.BGFWHM_edit.String);
 cb = handles.Const_bg_check.Value;
-save_image(stack, slider_val, cent_g, bg_g, cb, filepath, 'hdf5')
+for ads = 1:data_sets
+    save_image(stacks{ads}, slider_val, cent_g, bg_g, cb, filepath, 'hdf5')
+end
 handles = guidata(hObject); %Get updated version of handles (updated in update_recon_im())
-
 guidata(hObject, handles);
 
 
@@ -1061,7 +1081,7 @@ function rotate_data_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 try
     angle = str2num(handles.rotate_data_edit.String);
-    handles.raw_data = imrotate(handles.raw_data, angle, 'bicubic', 'crop');
+    handles.raw_data{handles.pattern_data_nr} = imrotate(handles.raw_data, angle, 'bicubic', 'crop');
     handles.rotated_text.String = 'Rotated!';
     set(handles.rotate_data_button,'Enable','off');
 catch
@@ -1224,3 +1244,54 @@ handles.pattern = p.p;
 guidata(hObject, handles)
 Update_pattern_edits_fr_handles(hObject, eventdata, handles);
 
+
+
+
+function Interleaved_nr_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to Interleaved_nr_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.interleaved_nr = str2num(handles.Interleaved_nr_edit.String)
+guidata(hObject, handles)
+% Hints: get(hObject,'String') returns contents of Interleaved_nr_edit as text
+%        str2double(get(hObject,'String')) returns contents of Interleaved_nr_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Interleaved_nr_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Interleaved_nr_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function pattern_data_nr_Callback(hObject, eventdata, handles)
+% hObject    handle to pattern_data_nr (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.active_data_set = str2double(handles.pattern_data_nr.String);
+guidata(hObject, handles);
+update_pattern_id_im(hObject, handles);
+handles = guidata(hObject);
+guidata(hObject, handles);
+% Hints: get(hObject,'String') returns contents of pattern_data_nr as text
+%        str2double(get(hObject,'String')) returns contents of pattern_data_nr as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function pattern_data_nr_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pattern_data_nr (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

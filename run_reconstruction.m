@@ -1,9 +1,9 @@
-function run_reconstruction(hObject, eventdata, handles)
+function run_reconstruction(hObject, eventdata, handles, active_set)
 % hObject    handle to run_reconstruction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.working_text.String = 'Reconstructing image...'
-data = handles.raw_data;
+data = handles.raw_data{active_set};
 if handles.HPCcorrbox.Value && isfield(handles, 'HPC_im')
     data = HP_correct(data, handles.HPC_im);
 end
