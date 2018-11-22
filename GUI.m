@@ -700,7 +700,7 @@ for ads = 1:data_sets
         stacks{ads} = stacks{ads}(handles.fr_p_column + 1:end - handles.fr_p_column, handles.fr_p_line + 1:end - handles.fr_p_line,:);
     end
     if handles.multi_f_cb.Value
-        stacks{ads} = chessboard_correction_multi_f(stack, lines_p_square);
+        stacks{ads} = chessboard_correction_multi_f(stacks{abs}, lines_p_square);
     end
     for i = 1:size(stacks{ads}, 3)
         stacks{ads}(:,:,i) = Skew_stripe_corr(skew_fac, line_px, stacks{ads}(:,:,i), lines_p_square, handles.rotate_skewstripe_cb.Value);
